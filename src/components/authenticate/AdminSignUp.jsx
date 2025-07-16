@@ -6,11 +6,11 @@ import axios from 'axios';
 export default function AdminSignUp() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        first_name: '',
-        last_name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         password: '',
-        confirm_password: '',
+        confirmPassword: '',
     });
 
     const handleChange = (e) => {
@@ -20,15 +20,15 @@ export default function AdminSignUp() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (formData.password != formData.confirm_password) {
+        if (formData.password != formData.confirmPassword) {
             alert("Password should be match")
         }
         else {
             console.log(formData);
-            axios({
-                url: 'http://192.168.1.44:2020/HRMS/admine_Register',
-                method: 'post',
-                data: formData
+            axios.post('http://192.168.1.44:2020/HRMS/admine_Register', formData, {
+                headers: {
+                    "Content-Type": "application/json"
+                }
             }).then(res => {
                 alert("Account created!");
                 navigate('/');
@@ -42,7 +42,7 @@ export default function AdminSignUp() {
                 <Container maxWidth="sm">
                     <Paper elevation={4} sx={{ p: 4, borderRadius: 2, backgroundColor: '#e2ebef ' }}>
                         <div className="text-center mb-2">
-                            <img src="/lunovianLogo.jpg" id="lunovianLogo" alt="lunovianLogo" className="img-fluid" 
+                            <img src="/lunovianLogo.jpg" id="lunovianLogo" alt="lunovianLogo" className="img-fluid"
                                 style={{ maxHeight: "100px", backgroundColor: 'black', borderRadius: '500px' }} />
                         </div>
                         <Typography variant="h5" textAlign="center" gutterBottom>
@@ -50,8 +50,8 @@ export default function AdminSignUp() {
                         </Typography>
 
                         <Box component="form" onSubmit={handleSubmit} noValidate>
-                            <TextField label="First Name" margin="normal" name='first_name' fullWidth required value={formData.first_name} onChange={handleChange} />
-                            <TextField label="Last Name" margin="normal" name='last_name' fullWidth required value={formData.last_name} onChange={handleChange} />
+                            <TextField label="First Name" margin="normal" name='firstName' fullWidth required value={formData.firstName} onChange={handleChange} />
+                            <TextField label="Last Name" margin="normal" name='lastName' fullWidth required value={formData.lastName} onChange={handleChange} />
                             <TextField label="Email Address" type="email" name='email' margin="normal" fullWidth required value={formData.email} onChange={handleChange} />
 
                             <Grid container spacing={2} mt={1}>
@@ -59,7 +59,7 @@ export default function AdminSignUp() {
                                     <TextField label="Password" name='password' type="password" fullWidth required value={formData.password} onChange={handleChange} />
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
-                                    <TextField label="Confirm Password" name='confirm_password' type="password" fullWidth required value={formData.confirm_password} onChange={handleChange} />
+                                    <TextField label="Confirm Password" name='confirmPassword' type="password" fullWidth required value={formData.confirmPassword} onChange={handleChange} />
                                 </Grid>
                             </Grid>
 
