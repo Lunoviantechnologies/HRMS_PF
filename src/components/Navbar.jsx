@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Navbar() {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('loggedUser'));
-    const adminName = user.name;
+    const adminName = user.sub;
 
     const handleLogout = ()=>{
         localStorage.removeItem('loggedUser');

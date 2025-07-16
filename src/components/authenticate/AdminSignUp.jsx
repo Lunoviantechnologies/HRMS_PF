@@ -25,7 +25,7 @@ export default function AdminSignUp() {
         }
         else {
             console.log(formData);
-            axios.post('http://192.168.1.44:2020/HRMS/admine_Register', formData, {
+            axios.post('http://192.168.1.58:2020/HRMS/admine_Register', formData, {
                 headers: {
                     "Content-Type": "application/json"
                 }

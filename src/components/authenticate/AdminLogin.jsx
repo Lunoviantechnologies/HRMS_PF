@@ -15,7 +15,7 @@ const AdminLogin = () => {
         e.preventDefault();
         // console.log(auth);
 
-        axios.post("http://192.168.1.44:2020/HRMS/admin_Login", auth).then(res => {
+        axios.post("http://192.168.1.58:2020/HRMS/admin_Login", auth).then(res => {
             // const authData = res.data;
             // const user = authData.find(data => data.email === auth.email && data.password === auth.password);
             // if (user) {
@@ -37,9 +37,31 @@ const AdminLogin = () => {
             // else {
             //     alert('Please give correct credentials');
             // }
-            const admin_token = res.data;
-            const admin_decode_token = jwtDecode(admin_token);
-            console.log(admin_decode_token);
+            alert('Login Successfull');
+            if (typeof res.data === "string") {
+                const decoded = jwtDecode(res.data);
+                // console.log(decoded);
+                if (decoded.role === 'ROLE_ADMIN') {
+                    navigate('/dashboard');
+                }
+                else {
+                    navigate('/employee_dashboard')
+                }
+            } else if (res.data.token) {
+                const decoded = jwtDecode(res.data.token);
+                console.log(decoded);
+                localStorage.setItem('loggedUser', JSON.stringify(decoded)
+                );
+                if (decoded.role === 'ROLE_ADMIN') {
+                    navigate('/dashboard');
+                }
+                else {
+                    navigate('/employee_dashboard')
+                }
+            } else {
+                console.error("Invalid response format", res.data);
+                alert('Please give correct credentials');
+            }
         }).catch(err => console.log(err));
     };
 
@@ -51,8 +73,8 @@ const AdminLogin = () => {
                         <div className="form_login col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 p-4 rounded shadow">
 
                             <div className="text-center mb-2">
-                                <img src="/lunovianLogo.jpg" id="lunovianLogo" alt="lunovianLogo" className="img-fluid" 
-                                    style={{maxHeight: "100px", backgroundColor:'black', borderRadius: '500px' }}/>
+                                <img src="/lunovianLogo.jpg" id="lunovianLogo" alt="lunovianLogo" className="img-fluid"
+                                    style={{ maxHeight: "100px", backgroundColor: 'black', borderRadius: '500px' }} />
                             </div>
 
                             <div className="text-center mb-4">
