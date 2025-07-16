@@ -24,12 +24,12 @@ const AddEmployee = () => {
 
     const [formData, setFormData] = useState({
         prefix: '',
-        fname: '',
-        lname: '',
-        email: '',
-        mobile: '',
+        firstName: '',
+        lastName: '',
+        emailId: '',
+        contactNumber1: '',
         gender: '',
-        dob: '',
+        dateOfBirth: '',
         nationality: '',
         workEmail: '',
         joiningDate: '',
@@ -86,7 +86,7 @@ const AddEmployee = () => {
             firstName: '',
             lastName: '',
             emailId: '',
-            ContactNumber1: '',
+            contactNumber1: '',
             gender: '',
             dateOfBirth: '',
             nationality: '',
@@ -121,16 +121,16 @@ const AddEmployee = () => {
 
         axios({
             url: 'http://192.168.1.44:2020/HRMS/employee/register',
-            method : 'post',
-            data : formData
-        }).then( res => console.log('employee data sent successfully', res.data))
-        .catch(err => console.log('data not sent', err));
+            method: 'post',
+            data: formData
+        }).then(res => console.log('employee data sent successfully', res.data))
+            .catch(err => console.log('data not sent', err));
     };
 
     const validateStep = (step) => {
         switch (step) {
             case 0: // Basic Details
-                return formData.fname && formData.lname && formData.email && formData.mobile;
+                return formData.firstName && formData.lastName && formData.emailId && formData.contactNumber1;
             case 1: // Personal Details
                 return formData.panNumber && formData.aadharNumber;
             case 2: // Family Details
@@ -166,12 +166,12 @@ const AddEmployee = () => {
                                 <MenuItem value={'dr.'}>Dr</MenuItem>
                             </Select>
                         </FormControl>
-                        <TextField id="fname" label="First Name" value={formData.fname} onChange={handleChange} required />
-                        <TextField id="lname" label="Last Name" value={formData.lname} onChange={handleChange} required />
-                        <TextField id="email" label="Email ID" value={formData.email} onChange={handleChange} required />
-                        <TextField id="mobile" label="Contact Number" value={formData.mobile} onChange={handleChange} required />
+                        <TextField id="firstName" label="First Name" value={formData.firstName} onChange={handleChange} required />
+                        <TextField id="lastName" label="Last Name" value={formData.lastName} onChange={handleChange} required />
+                        <TextField id="emailId" label="Email ID" value={formData.emailId} onChange={handleChange} required />
+                        <TextField id="contactNumber1" label="Contact Number" value={formData.contactNumber1} onChange={handleChange} required />
                         <TextField id="gender" label="Gender" value={formData.gender} onChange={handleChange} />
-                        <TextField id="dob" type="date" label="Date Of Birth" value={formData.dob} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+                        <TextField id="dateOfBirth" type="date" label="Date Of Birth" value={formData.dateOfBirth} onChange={handleChange} InputLabelProps={{ shrink: true }} />
                         <TextField id="nationality" label="Nationality" value={formData.nationality} onChange={handleChange} />
                         <TextField id="workEmail" label="Work Email ID" value={formData.workEmail} onChange={handleChange} />
                         <TextField id="joiningDate" type="date" label="Joining Date" value={formData.joiningDate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
