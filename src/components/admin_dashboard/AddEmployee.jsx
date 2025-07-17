@@ -18,7 +18,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 const AddEmployee = () => {
-    const adminToken = localStorage.getItem('loggedUser');
+    const adminToken = JSON.parse(localStorage.getItem('loggedUser'));
     // console.log(adminToken);
     const [step, setStep] = useState(() => {
         const savedStep = localStorage.getItem('currentStep');
