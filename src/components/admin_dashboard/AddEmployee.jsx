@@ -3,6 +3,7 @@ import { Card, Box, TextField, Button, FormControl, InputLabel, Select, MenuItem
 import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import axios from "axios";
+import backendIP from "../../api";
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -17,6 +18,8 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 const AddEmployee = () => {
+    const adminToken = localStorage.getItem('loggedUser');
+    // console.log(adminToken);
     const [step, setStep] = useState(() => {
         const savedStep = localStorage.getItem('currentStep');
         return savedStep ? parseInt(savedStep, 10) : 0;
@@ -79,7 +82,13 @@ const AddEmployee = () => {
 
     const handleSubmit = () => {
         console.log("Submitted Data:", formData);
-        alert("Employee form submitted successfully!");
+
+        const formDataToSend = new FormData();
+        for (const key in formData) {
+            if (formData[key]) {
+                formDataToSend.append(key, formData[key]);
+            }
+        };
 
         setFormData({
             prefix: '',
@@ -120,11 +129,17 @@ const AddEmployee = () => {
         localStorage.removeItem('currentStep');
 
         axios({
-            url: 'http://192.168.1.44:2020/HRMS/employee/register',
+            url: `${backendIP}/HRMS/employee/register`,
             method: 'post',
-            data: formData
-        }).then(res => console.log('employee data sent successfully', res.data))
-            .catch(err => console.log('data not sent', err));
+            headers: {
+                Authorization: adminToken,
+                'Content-Type': 'multipart/form-data'
+            },
+            data: formDataToSend
+        }).then(res => {
+            console.log('employee data sent successfully', res.data);
+            alert("Employee form submitted successfully!");
+        }).catch(err => console.log('data not sent', err));
     };
 
     const validateStep = (step) => {
@@ -188,7 +203,7 @@ const AddEmployee = () => {
                     <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
                         <TextField id="panNumber" label="Pan Number" value={formData.panNumber} onChange={handleChange} />
                         <TextField id="aadharNumber" label="Aadhar Number" value={formData.aadharNumber} onChange={handleChange} />
-                        <TextField id="passportNumber" label="passport Number" value={formData.passportNumber} onChange={handleChange} />
+                        <TextField id="passportNumber" label="Passport Number" value={formData.passportNumber} onChange={handleChange} />
                     </Box>
                 </Card>
             )}

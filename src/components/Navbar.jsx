@@ -1,10 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 export default function Navbar() {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('loggedUser'));
-    const adminName = user.sub;
+    const decoded = jwtDecode(user);
+    // console.log(decoded);
+    const adminName = decoded.sub;
 
     const handleLogout = ()=>{
         localStorage.removeItem('loggedUser');
