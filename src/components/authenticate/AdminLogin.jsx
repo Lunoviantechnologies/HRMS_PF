@@ -3,10 +3,12 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const AdminLogin = () => {
 
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [auth, setAuth] = useState({
         email: '',
         password: ''
@@ -18,21 +20,46 @@ const AdminLogin = () => {
 
         axios.post(`${backendIP}/HRMS/admin_Login`, auth).then(res => {
             alert('Login Successfull');
-            if (typeof res.data === "string") {
-                const decoded = jwtDecode(res.data);
-                // console.log(decoded);
-                navigate(decoded.role === 'admin' ? '/dashboard' : '/employee_dashboard');
-            } else if (res.data.token) {
-                const decoded = jwtDecode(res.data.token);
-                // console.log(res.data.token);
-                localStorage.setItem('loggedUser', JSON.stringify(res.data.token));
 
-                navigate(decoded.role === 'admin' ? '/dashboard' : '/employee_dashboard');
-            } else {
-                console.error("Invalid response format", res.data);
-                alert('Please give correct credentials');
+            let token = "";
+            if (typeof res.data === "string") {
+                token = res.data;
+            } else if (res.data.token) {
+                token = res.data.token;
             }
-        }).catch(err => console.log(err));
+            if (token) {
+                login(token, navigate); // ✅ use context login function and  pass navigate to context
+            } else {
+                alert("Invalid login response");
+            }
+            // if (typeof res.data === "string") {
+            //     const decoded = jwtDecode(res.data);
+            //     // console.log(decoded);
+            //     if (decoded.role === 'admin') {
+            //         navigate('/dashboard');
+            //     }
+            //     if (decoded.role === 'employee') {
+            //         navigate('/employee_dashboard');
+            //     }
+            // } else if (res.data.token) {
+            //     const decoded = jwtDecode(res.data.token);
+            //     // console.log(res.data.token);
+            //     localStorage.setItem('loggedUserToken', JSON.stringify(res.data.token));
+
+            //     if (decoded.role === 'admin') {
+            //         navigate('/dashboard');
+            //     }
+            //     if (decoded.role === 'employee') {
+            //         navigate('/employee_dashboard');
+            //     }
+            // } else {
+            //     console.log("Invalid response format", res.data);
+            //     // alert('Please give correct credentials', res.data);
+            // }
+        }).catch(err => {
+            console.log(err);
+            alert('Please give correct credentials');
+        });
     };
 
     return (

@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Table, Modal } from 'react-bootstrap';
 import EmployeeModel from "./EmployeeModel";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import backendIP from "../../api";
+import { jwtDecode } from "jwt-decode";
+import { useAuth } from "../../context/AuthContext";
 
 const EmployeesList = () => {
 
+   const { token } = useAuth();
     const navigate = useNavigate();
     const employees = [
         { id: 1, fname: "Sohan", lname: "Yadav", mobile: "9212238332", email: "sohan@example.com" },
@@ -30,6 +35,16 @@ const EmployeesList = () => {
     const handleAddEmployee = ()=>{
         navigate('/dashboard/addEmployee');
     };
+
+    useEffect(()=>{
+        axios.get(`${backendIP}/HRMS/employee/all`,{
+            headers: {
+                Authorization: token
+            }
+        }).then(res =>{
+            console.log(res.data);
+        }).catch(err => console.log(err));
+    }, []);
 
     return (
         <div>

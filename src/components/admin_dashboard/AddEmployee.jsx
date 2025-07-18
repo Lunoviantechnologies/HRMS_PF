@@ -4,6 +4,7 @@ import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import axios from "axios";
 import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -18,8 +19,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 const AddEmployee = () => {
-    const adminToken = JSON.parse(localStorage.getItem('loggedUser'));
-    // console.log(adminToken);
+    const {token} = useAuth();
     const [step, setStep] = useState(() => {
         const savedStep = localStorage.getItem('currentStep');
         return savedStep ? parseInt(savedStep, 10) : 0;
@@ -132,7 +132,7 @@ const AddEmployee = () => {
             url: `${backendIP}/HRMS/employee/register`,
             method: 'post',
             headers: {
-                Authorization: adminToken,
+                Authorization: token,
                 'Content-Type': 'multipart/form-data'
             },
             data: formDataToSend
