@@ -7,6 +7,7 @@ export default function AdminForgotPassword() {
 
     const handleReset = () => {
         // Add reset password logic here (API call, etc.)
+        // console.log(`${email}`)
         alert(`Reset link sent to ${email}`);
     };
 
