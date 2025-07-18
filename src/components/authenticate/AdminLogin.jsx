@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import backendIP from "../../api";
 
 const AdminLogin = () => {
 
@@ -15,49 +16,18 @@ const AdminLogin = () => {
         e.preventDefault();
         // console.log(auth);
 
-        axios.post("http://192.168.1.58:2020/HRMS/admin_Login", auth).then(res => {
-            // const authData = res.data;
-            // const user = authData.find(data => data.email === auth.email && data.password === auth.password);
-            // if (user) {
-            //     alert('Login Successfull');
-            //     localStorage.setItem('loggedUser', JSON.stringify({
-            //             name : user.firstName,
-            //             email: user.email,
-            //             role: user.role
-            //         })
-            //     );
-
-            //     if(user.role == 'admin'){
-            //         navigate('/dashboard');
-            //     }
-            //     else{
-            //         navigate('/employee_dashboard')
-            //     }
-            // }
-            // else {
-            //     alert('Please give correct credentials');
-            // }
+        axios.post(`${backendIP}/HRMS/admin_Login`, auth).then(res => {
             alert('Login Successfull');
             if (typeof res.data === "string") {
                 const decoded = jwtDecode(res.data);
                 // console.log(decoded);
-                if (decoded.role === 'ROLE_ADMIN') {
-                    navigate('/dashboard');
-                }
-                else {
-                    navigate('/employee_dashboard')
-                }
+                navigate(decoded.role === 'admin' ? '/dashboard' : '/employee_dashboard');
             } else if (res.data.token) {
                 const decoded = jwtDecode(res.data.token);
-                console.log(decoded);
-                localStorage.setItem('loggedUser', JSON.stringify(decoded)
-                );
-                if (decoded.role === 'ROLE_ADMIN') {
-                    navigate('/dashboard');
-                }
-                else {
-                    navigate('/employee_dashboard')
-                }
+                // console.log(res.data.token);
+                localStorage.setItem('loggedUser', JSON.stringify(res.data.token));
+
+                navigate(decoded.role === 'admin' ? '/dashboard' : '/employee_dashboard');
             } else {
                 console.error("Invalid response format", res.data);
                 alert('Please give correct credentials');

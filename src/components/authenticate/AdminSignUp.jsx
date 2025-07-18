@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Container, Grid, Box, Typography, TextField, Button, Paper } from '@mui/material';
 import axios from 'axios';
+import backendIP from '../../api';
 
 export default function AdminSignUp() {
     const navigate = useNavigate();
@@ -24,8 +25,8 @@ export default function AdminSignUp() {
             alert("Password should be match")
         }
         else {
-            console.log(formData);
-            axios.post('http://192.168.1.58:2020/HRMS/admine_Register', formData, {
+            // console.log(formData);
+            axios.post(`${backendIP}/HRMS/admine_Register`, formData, {
                 headers: {
                     "Content-Type": "application/json"
                 }
