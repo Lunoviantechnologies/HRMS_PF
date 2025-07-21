@@ -1,7 +1,6 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -32,30 +31,6 @@ const AdminLogin = () => {
             } else {
                 alert("Invalid login response");
             }
-            // if (typeof res.data === "string") {
-            //     const decoded = jwtDecode(res.data);
-            //     // console.log(decoded);
-            //     if (decoded.role === 'admin') {
-            //         navigate('/dashboard');
-            //     }
-            //     if (decoded.role === 'employee') {
-            //         navigate('/employee_dashboard');
-            //     }
-            // } else if (res.data.token) {
-            //     const decoded = jwtDecode(res.data.token);
-            //     // console.log(res.data.token);
-            //     localStorage.setItem('loggedUserToken', JSON.stringify(res.data.token));
-
-            //     if (decoded.role === 'admin') {
-            //         navigate('/dashboard');
-            //     }
-            //     if (decoded.role === 'employee') {
-            //         navigate('/employee_dashboard');
-            //     }
-            // } else {
-            //     console.log("Invalid response format", res.data);
-            //     // alert('Please give correct credentials', res.data);
-            // }
         }).catch(err => {
             console.log(err);
             alert('Please give correct credentials');

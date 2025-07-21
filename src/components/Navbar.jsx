@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,6 +6,12 @@ export default function Navbar() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     // console.log(user);
+
+    useEffect(()=>{
+        if(!user){
+            navigate('/');
+        }
+    }, [user]);
 
     const handleLogout = ()=>{
         logout(navigate);
@@ -54,7 +60,7 @@ export default function Navbar() {
                         aria-expanded="false"
                     >
                         <i className="bi bi-person-circle fs-5 me-2"></i>
-                        {user.sub}
+                        {user?.sub}
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                         <li>

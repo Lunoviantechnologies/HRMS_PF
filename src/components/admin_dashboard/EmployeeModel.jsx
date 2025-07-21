@@ -4,10 +4,6 @@ import { Modal, Button, Row, Col, Form } from "react-bootstrap";
 const EmployeeModel = ({ show, onHide, employee }) => {
   if (!employee) return null;
 
-  const getInitials = (fname, lname) => {
-    return `${fname?.[0] || ""}${lname?.[0] || ""}`.toUpperCase();
-  };
-
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
       <Modal.Header closeButton>
@@ -17,24 +13,19 @@ const EmployeeModel = ({ show, onHide, employee }) => {
         <Row>
           {/* Left Column with initials */}
           <Col md={4} className="text-center">
-            <div
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: "50%",
-                backgroundColor: "#ddd",
-                margin: "0 auto",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 24,
-                fontWeight: "bold",
-              }}
-            >
-              {getInitials(employee.fname, employee.lname)}
+            <div>
+              {
+                employee.profilePhoto ? <img className="rounded-circle" width={'80px'} height={'80px'} src={`data:image/jpeg;base64,${employee.profilePhoto}`} alt="Profile photo" />
+                  : (
+                    <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: "#ddd", margin: "0 auto", display: "flex", alignItems: "center",
+                      justifyContent: "center", fontSize: 24, fontWeight: "bold"}}>
+                        {(employee.firstName?.[0] || '-').toUpperCase() + (employee.lastName?.[0] || '-').toUpperCase()}
+                    </div>
+                  )
+              }
             </div>
             <div style={{ marginTop: 10, fontWeight: "bold" }}>
-              {employee.fname} {employee.lname}
+              {employee.firstName} {employee.lastName}
             </div>
           </Col>
 
@@ -42,19 +33,19 @@ const EmployeeModel = ({ show, onHide, employee }) => {
           <Col md={8}>
             <Row className="mb-2">
               <Col md={5}><strong>First Name:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.fname}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.firstName}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Last Name:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.lname}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.lastName}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Mobile:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.mobile}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.contactNumber1}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Email:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.email}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.emailId}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Gender:</strong></Col>
@@ -74,23 +65,15 @@ const EmployeeModel = ({ show, onHide, employee }) => {
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Enrollment Date:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.enrollDate || ""}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.joiningDate || ""}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Account Number:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.account || ""}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.accountNo || ""}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Bank:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.bank || ""}</Col>
-            </Row>
-
-            {/* Upload Section */}
-            <Row className="mt-3">
-              <Col md={5}><strong>Upload Document:</strong></Col>
-              <Col md={7}>
-                <Form.Control type="file" />
-              </Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.bankName || ""}</Col>
             </Row>
           </Col>
         </Row>
