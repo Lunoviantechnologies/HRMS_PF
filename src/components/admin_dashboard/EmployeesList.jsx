@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import EditEmployeeModel from "./EditEmployeeModel";
 
 const EmployeesList = () => {
 
@@ -14,12 +15,41 @@ const EmployeesList = () => {
     // console.log(allEmployeesList);
 
     const [selectedEmp, setSelectedEmp] = useState(null);
-    const [showModal, setShowModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const handleView = (employee) => {
         setSelectedEmp(employee);
-        console.log(employee.id);
-        setShowModal(true);
+        // console.log(employee.id);
+        setShowViewModal(true);
+    };
+
+    const handleUpdate = (employee) => {
+        setSelectedEmp(employee);
+        // console.log(employee.id);
+        setShowEditModal(true);
+    };
+
+    const handleDelete = (employee) => {
+        // console.log(employee.id);
+
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${employee.firstName}?`);
+        if (!confirmDelete) return;
+
+        axios.delete(`${backendIP}/HRMS/employee/delete-employee/${employee.id}`, {
+            headers: {
+                Authorization: token
+            }
+        }).then(res => {
+            console.log('Employee deleted successfully', res.data);
+            alert('Employee deleted successfully');
+
+            const updatedEmployeesList = allEmployeesList.filter(removeEmployee => removeEmployee.id != employee.id);
+            setAllEmployeesList(updatedEmployeesList);
+        }).catch(err => {
+            console.log('Employee not deleted', err);
+            alert('Failed to delete employee');
+        })
     };
 
     const handleAddEmployee = () => {
@@ -74,11 +104,11 @@ const EmployeesList = () => {
                                         <td>{employees.firstName}</td>
                                         <td>{employees.lastName}</td>
                                         <td>{employees.contactNumber1}</td>
-                                        <td className="text-danger"><b>{employees.emailId}</b></td>
+                                        <td className="text-danger"><b>{employees.workEmail}</b></td>
                                         <td>
-                                            <Button variant="btn btn-outline-primary me-1" title="View Employee" onClick={() => handleView(employees)}><i className="bi bi-eye"></i></Button>
-                                            <Button variant="btn btn-outline-success me-1" title="Edit Employee" onClick={() => handleUpdate(employees)}><i className="bi bi-pencil"></i></Button>
-                                            <Button variant="btn btn-outline-danger" title="Delete Employee" onClick={() => handleDelete(employees)}><i className="bi bi-trash3-fill"></i></Button>
+                                            <Button variant="btn btn-outline-primary mx-1" title="View Employee" onClick={() => handleView(employees)}><i className="bi bi-eye"></i></Button>
+                                            <Button variant="btn btn-outline-success mx-1" title="Edit Employee" onClick={() => handleUpdate(employees)}><i className="bi bi-pencil"></i></Button>
+                                            <Button variant="btn btn-outline-danger mx-1" title="Delete Employee" onClick={() => handleDelete(employees)}><i className="bi bi-trash3-fill"></i></Button>
                                         </td>
                                     </tr>
                                 )
@@ -89,7 +119,7 @@ const EmployeesList = () => {
                                     <div className="text-center py-3">
                                         <div className="spinner-border text-primary" role="status" />
                                         <div>Loading employees...</div>
-                                    </div>  
+                                    </div>
                                 </td>
                             </tr>
                         )
@@ -98,12 +128,14 @@ const EmployeesList = () => {
             </Table>
 
             {selectedEmp && (
-                <EmployeeModel
-                    show={showModal}
-                    onHide={() => setShowModal(false)}
-                    employee={selectedEmp}
-                />
+                <EmployeeModel show={showViewModal} onHide={() => setShowViewModal(false)} employee={selectedEmp} />
             )}
+
+            {
+                selectedEmp && (
+                    <EditEmployeeModel show={showEditModal} onHide={() => { setShowEditModal(false) }} employee={selectedEmp} />
+                )
+            }
 
         </div>
     )

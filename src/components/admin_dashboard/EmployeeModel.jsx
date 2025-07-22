@@ -45,7 +45,7 @@ const EmployeeModel = ({ show, onHide, employee }) => {
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Email:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.emailId}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.workEmail}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Gender:</strong></Col>
@@ -56,15 +56,15 @@ const EmployeeModel = ({ show, onHide, employee }) => {
               <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.department || ""}</Col>
             </Row>
             <Row className="mb-2">
-              <Col md={5}><strong>Language:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.language || ""}</Col>
+              <Col md={5}><strong>Experience:</strong></Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.previousExperience || ""}</Col>
             </Row>
             <Row className="mb-2">
               <Col md={5}><strong>Monthly Salary:</strong></Col>
-              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.salary || ""}</Col>
+              <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.basicEmployeeSalary || ""}</Col>
             </Row>
             <Row className="mb-2">
-              <Col md={5}><strong>Enrollment Date:</strong></Col>
+              <Col md={5}><strong>Joining Date:</strong></Col>
               <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.joiningDate || ""}</Col>
             </Row>
             <Row className="mb-2">
