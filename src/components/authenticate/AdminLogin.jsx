@@ -72,7 +72,7 @@ const AdminLogin = () => {
                                 </div>
 
                                 <hr />
-                                <div className="text-center my-3">
+                                {/* <div className="text-center my-3">
                                     <span className="text-muted">or sign in with</span>
                                 </div>
 
@@ -83,7 +83,7 @@ const AdminLogin = () => {
                                     <a href="#" className="btn btn-outline-danger rounded-circle">
                                         <i className="bi bi-google"></i>
                                     </a>
-                                </div>
+                                </div> */}
 
                                 <div className="text-center">
                                     <Link to={'/signUp'} className="small text-decoration-none">Need an account? Please SignUp!</Link>

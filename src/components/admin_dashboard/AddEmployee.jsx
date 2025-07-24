@@ -19,7 +19,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 const AddEmployee = () => {
-    const {token} = useAuth();
+    const {token} = useAuth();    
     const [step, setStep] = useState(() => {
         const savedStep = localStorage.getItem('currentStep');
         return savedStep ? parseInt(savedStep, 10) : 0;
