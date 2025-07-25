@@ -13,6 +13,7 @@ import AdminSignUp from './components/authenticate/AdminSignUp.jsx';
 import AdminForgotPassword from './components/authenticate/adminForgetPassword.jsx';
 import Employee_dashboard from './components/employee_dashboard/Employee_dashboard.jsx';
 import Employee_LeaveRequest from './components/employee_dashboard/employee_LeaveRequest.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
 
 const router = createBrowserRouter([
     {
@@ -66,5 +67,7 @@ const router = createBrowserRouter([
 ]);
 
 createRoot(document.getElementById('root')).render(
-    <RouterProvider router={router} />
+    <AuthProvider>
+        <RouterProvider router={router} />
+    </AuthProvider>
 );

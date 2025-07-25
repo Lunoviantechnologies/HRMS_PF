@@ -4,6 +4,7 @@ import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import axios from "axios";
 import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -18,8 +19,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 const AddEmployee = () => {
-    const adminToken = JSON.parse(localStorage.getItem('loggedUser'));
-    // console.log(adminToken);
+    const {token} = useAuth();    
     const [step, setStep] = useState(() => {
         const savedStep = localStorage.getItem('currentStep');
         return savedStep ? parseInt(savedStep, 10) : 0;
@@ -58,7 +58,9 @@ const AddEmployee = () => {
         profilePhoto: '',
         document1: '',
         document2: '',
-        document3: ''
+        document3: '',
+        basicEmployeeSalary: 0,
+        password: ''
     });
 
     useEffect(() => {
@@ -123,7 +125,9 @@ const AddEmployee = () => {
             profilePhoto: '',
             document1: '',
             document2: '',
-            document3: ''
+            document3: '',
+            basicEmployeeSalary: '',
+            password: ''
         });
         setStep(0);
         localStorage.removeItem('currentStep');
@@ -132,14 +136,17 @@ const AddEmployee = () => {
             url: `${backendIP}/HRMS/employee/register`,
             method: 'post',
             headers: {
-                Authorization: adminToken,
+                Authorization: token,
                 'Content-Type': 'multipart/form-data'
             },
             data: formDataToSend
         }).then(res => {
             console.log('employee data sent successfully', res.data);
-            alert("Employee form submitted successfully!");
-        }).catch(err => console.log('data not sent', err));
+            alert("Employee data submitted successfully!");
+        }).catch(err => {
+            console.log('data not sent', err);
+            alert('Employee data not registered');
+        });
     };
 
     const validateStep = (step) => {
@@ -158,6 +165,10 @@ const AddEmployee = () => {
                 return formData.bankName && formData.accountNo && formData.ifscCode;
             case 6: // Documents (optional to enforce)
                 return true;
+            case 7: // Salary
+                return formData.basicEmployeeSalary;
+            case 8: // Password
+                return formData.password;
             default:
                 return false;
         }
@@ -304,12 +315,30 @@ const AddEmployee = () => {
                 </Card>
             )}
 
+            {step === 7 && (
+                <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                    <h5>Basic Salary</h5>
+                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                        <TextField id="basicEmployeeSalary" label="Salary" value={formData.basicEmployeeSalary} onChange={handleChange} />
+                    </Box>
+                </Card>
+            )}
+
+            {step === 8 && (
+                <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                    <h5>Credentials</h5>
+                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                        <TextField id="password" label="Password" value={formData.password} onChange={handleChange} />
+                    </Box>
+                </Card>
+            )}
+
             <Box sx={{ mt: 2 }}>
                 <div className="d-flex justify-content-around">
                     <Button variant="contained" onClick={handleBack} disabled={step === 0} sx={{ px: 5 }}>
                         Back
                     </Button>
-                    {step < 6 ? (
+                    {step < 8 ? (
                         <Button variant="contained" onClick={handleNext} sx={{ px: 5 }}>Next</Button>
                     ) : (
                         <Button variant="contained" onClick={handleSubmit} sx={{ px: 5 }}>Submit</Button>

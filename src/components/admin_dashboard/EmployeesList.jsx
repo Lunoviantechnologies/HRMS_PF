@@ -1,35 +1,71 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Table, Modal } from 'react-bootstrap';
 import EmployeeModel from "./EmployeeModel";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
+import EditEmployeeModel from "./EditEmployeeModel";
 
 const EmployeesList = () => {
 
+    const { token } = useAuth();
     const navigate = useNavigate();
-    const employees = [
-        { id: 1, fname: "Sohan", lname: "Yadav", mobile: "9212238332", email: "sohan@example.com" },
-        { id: 2, fname: "Mohan", lname: "Singh", mobile: "6245231321", email: "mohan@example.com" },
-        { id: 3, fname: "Rohan", lname: "Kumar", mobile: "9212238332", email: "rohan@example.com" },
-        { id: 4, fname: "Sohan", lname: "Mehra", mobile: "6245231321", email: "sohan.mehra@example.com" },
-        { id: 5, fname: "Sohan", lname: "Yadav", mobile: "9212238332", email: "sohan@example.com" },
-        { id: 6, fname: "Sohan", lname: "Yadav", mobile: "9212238332", email: "sohan@example.com" }
-    ];
-
-    function getInitials(fname, lname) {
-        return (fname[0] + lname[0]).toUpperCase();
-    };
+    const [allEmployeesList, setAllEmployeesList] = useState(null);
+    // console.log(allEmployeesList);
 
     const [selectedEmp, setSelectedEmp] = useState(null);
-    const [showModal, setShowModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const handleView = (employee) => {
         setSelectedEmp(employee);
-        setShowModal(true);
+        // console.log(employee.id);
+        setShowViewModal(true);
     };
 
-    const handleAddEmployee = ()=>{
+    const handleUpdate = (employee) => {
+        setSelectedEmp(employee);
+        // console.log(employee.id);
+        setShowEditModal(true);
+    };
+
+    const handleDelete = (employee) => {
+        // console.log(employee.id);
+
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${employee.firstName}?`);
+        if (!confirmDelete) return;
+
+        axios.delete(`${backendIP}/HRMS/employee/delete-employee/${employee.id}`, {
+            headers: {
+                Authorization: token
+            }
+        }).then(res => {
+            console.log('Employee deleted successfully', res.data);
+            alert('Employee deleted successfully');
+
+            const updatedEmployeesList = allEmployeesList.filter(removeEmployee => removeEmployee.id != employee.id);
+            setAllEmployeesList(updatedEmployeesList);
+        }).catch(err => {
+            console.log('Employee not deleted', err);
+            alert('Failed to delete employee');
+        })
+    };
+
+    const handleAddEmployee = () => {
         navigate('/dashboard/addEmployee');
     };
+
+    useEffect(() => {
+        axios.get(`${backendIP}/HRMS/employee/all`, {
+            headers: {
+                Authorization: token
+            }
+        }).then(res => {
+            // console.log(res.data);
+            setAllEmployeesList(res.data);
+        }).catch(err => console.log(err));
+    }, [token]);
 
     return (
         <div>
@@ -50,30 +86,56 @@ const EmployeesList = () => {
                     </tr>
                 </thead>
                 <tbody className="text-center">
-                    {employees.map(emp => (
-                        <tr key={emp.id}>
-                            <td>
-                                <div className="rounded-circle bg-light d-inline-block" style={{ width: '40px', height: '40px', lineHeight: '40px' }}>
-                                    {getInitials(emp.fname, emp.lname)}
-                                </div>
-                            </td>
-                            <td>{emp.fname}</td>
-                            <td>{emp.lname}</td>
-                            <td>{emp.mobile}</td>
-                            <td className="text-danger"><b>{emp.email}</b></td>
-                            <td><Button variant="secondary" onClick={() => handleView(emp)}>View</Button></td>
-                        </tr>
-                    ))}
+                    {
+                        allEmployeesList ? (
+                            allEmployeesList.map((employees) => {
+                                return (
+                                    <tr key={employees.id}>
+                                        <td>
+                                            {
+                                                employees.profilePhoto ? <img className="rounded-circle" width={'40px'} height={'40px'} src={`data:image/jpeg;base64,${employees.profilePhoto}`} alt="Profile photo" />
+                                                    : (
+                                                        <div className="rounded-circle bg-light d-inline-block" style={{ width: '40px', height: '40px', lineHeight: '40px' }}>
+                                                            {(employees.firstName?.[0] || '-').toUpperCase() + (employees.lastName?.[0] || '-').toUpperCase()}
+                                                        </div>
+                                                    )
+                                            }
+                                        </td>
+                                        <td>{employees.firstName}</td>
+                                        <td>{employees.lastName}</td>
+                                        <td>{employees.contactNumber1}</td>
+                                        <td className="text-danger"><b>{employees.workEmail}</b></td>
+                                        <td>
+                                            <Button variant="btn btn-outline-primary mx-1" title="View Employee" onClick={() => handleView(employees)}><i className="bi bi-eye"></i></Button>
+                                            <Button variant="btn btn-outline-success mx-1" title="Edit Employee" onClick={() => handleUpdate(employees)}><i className="bi bi-pencil"></i></Button>
+                                            <Button variant="btn btn-outline-danger mx-1" title="Delete Employee" onClick={() => handleDelete(employees)}><i className="bi bi-trash3-fill"></i></Button>
+                                        </td>
+                                    </tr>
+                                )
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan="6">
+                                    <div className="text-center py-3">
+                                        <div className="spinner-border text-primary" role="status" />
+                                        <div>Loading employees...</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        )
+                    }
                 </tbody>
             </Table>
 
             {selectedEmp && (
-                <EmployeeModel
-                    show={showModal}
-                    onHide={() => setShowModal(false)}
-                    employee={selectedEmp}
-                />
+                <EmployeeModel show={showViewModal} onHide={() => setShowViewModal(false)} employee={selectedEmp} />
             )}
+
+            {
+                selectedEmp && (
+                    <EditEmployeeModel show={showEditModal} onHide={() => { setShowEditModal(false) }} employee={selectedEmp} />
+                )
+            }
 
         </div>
     )
