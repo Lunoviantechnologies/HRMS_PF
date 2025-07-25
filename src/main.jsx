@@ -12,7 +12,6 @@ import LeaveRequest from './components/admin_dashboard/LeaveRequest.jsx';
 import AdminSignUp from './components/authenticate/AdminSignUp.jsx';
 import AdminForgotPassword from './components/authenticate/adminForgetPassword.jsx';
 import Employee_dashboard from './components/employee_dashboard/Employee_dashboard.jsx';
-import AttendancePunch from './components/employee_dashboard/AttendencePunch.jsx';
 import Employee_LeaveRequest from './components/employee_dashboard/employee_LeaveRequest.jsx';
 
 const router = createBrowserRouter([
@@ -58,10 +57,6 @@ const router = createBrowserRouter([
         path : '/employee_dashboard',
         element : <Employee_dashboard/>,
         children:[
-            {
-                path: 'attendence',
-                element: <AttendancePunch />
-            },
             {
                 path: 'leaveRequest',
                 element: <Employee_LeaveRequest />
