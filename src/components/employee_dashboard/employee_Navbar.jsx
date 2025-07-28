@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Employee_Navbar() {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('loggedUser'));
-    const adminName = user.name;
+    const { user } = useAuth();
+    console.log(user);
 
     const handleLogout = ()=>{
         localStorage.removeItem('loggedUser');
@@ -68,8 +69,8 @@ export default function Employee_Navbar() {
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
                     >
-                        <i className="bi bi-person-circle fs-5 me-2"></i>
-                        {adminName}
+                        <span className="me-2 p-1 bg-light rounded-circle"><b className='text-dark'>{ user?.sub[0].toUpperCase() || <i className="bi bi-person-circle fs-5 me-2"></i> }</b></span>
+                        { user?.sub }
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                         <li>

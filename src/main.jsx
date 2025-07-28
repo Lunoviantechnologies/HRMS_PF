@@ -15,6 +15,7 @@ import Employee_dashboard from './components/employee_dashboard/Employee_dashboa
 import AttendancePunch from './components/employee_dashboard/AttendencePunch.jsx';
 import Employee_LeaveRequest from './components/employee_dashboard/employee_LeaveRequest.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
+import LeavePolicyConfig from './components/admin_dashboard/LeavePolicyConfig.jsx';
 
 const router = createBrowserRouter([
     {
@@ -52,6 +53,10 @@ const router = createBrowserRouter([
             {
                 path: '/dashboard/leaveRequest',
                 element: <LeaveRequest />
+            },
+            {
+                path: '/dashboard/leavePolicy',
+                element: <LeavePolicyConfig />
             }
         ]
     },

@@ -17,9 +17,8 @@ const AdminLogin = () => {
         e.preventDefault();
         // console.log(auth);
 
-        axios.post(`${backendIP}/HRMS/admin_Login`, auth).then(res => {
+        axios.post(`${backendIP}/HRMS/login`, auth).then(res => {
             alert('Login Successfull');
-
             let token = "";
             if (typeof res.data === "string") {
                 token = res.data;
