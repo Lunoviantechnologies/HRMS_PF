@@ -12,7 +12,7 @@ const EmployeesList = () => {
     const { token } = useAuth();
     const navigate = useNavigate();
     const [allEmployeesList, setAllEmployeesList] = useState(null);
-    // console.log(allEmployeesList);
+    console.log(allEmployeesList);
 
     const [selectedEmp, setSelectedEmp] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
