@@ -28,7 +28,7 @@ export default function LeaveRequest() {
   }, []);
 
   const handleStatusUpdate = async (id, newStatus) => {
-    // console.log(newStatus.toUpperCase());
+    console.log(newStatus.toUpperCase());
     
     try {
       await axios.put(
