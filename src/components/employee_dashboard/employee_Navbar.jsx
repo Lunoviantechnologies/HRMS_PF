@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Employee_Navbar() {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('loggedUser'));
-    const adminName = user.name;
+    const { user } = useAuth();
 
     const handleLogout = ()=>{
         localStorage.removeItem('loggedUser');
@@ -69,7 +69,7 @@ export default function Employee_Navbar() {
                         aria-expanded="false"
                     >
                         <i className="bi bi-person-circle fs-5 me-2"></i>
-                        {adminName}
+                        { user?.sub }
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                         <li>

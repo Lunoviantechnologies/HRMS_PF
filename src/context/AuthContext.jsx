@@ -45,9 +45,9 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('loggedUserToken', newToken);
             setToken(newToken);
             setUser(decoded);
-            if (decoded.role === "admin") {
+            if (decoded.role.toLowerCase() === "admin") {
                 navigate("/dashboard");
-            } else if (decoded.role === "employee") {
+            } else if (decoded.role.toLowerCase() === "employee") {
                 navigate("/employee_dashboard");
             } else {
                 logout(navigate); // unknown role, force logout
