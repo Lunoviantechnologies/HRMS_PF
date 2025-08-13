@@ -15,10 +15,26 @@ const LeaveRequest = () => {
     fetchLeaveRequests();
   }, []);
 
-  const fetchLeaveRequests = async () => {
+  const handleStatusUpdate = async (id, newStatus) => {
+    // console.log(newStatus.toUpperCase());
+    
     try {
-      const response = await axios.get(`${backendIP}/HRMS/api/leaves`);
-      setLeaveRequests(response.data);
+      await axios.put(
+        `${backendIP}/HRMS/api/leaves/${id}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const updatedRequests = leaveRequests.map((req) =>
+        req.id === id ? { ...req, status: newStatus } : req
+      );
+      setLeaveRequests(updatedRequests);
+      applyFilter(selectedTab, updatedRequests);
+      alert(`Leave status ${newStatus} updated for ID ${id}`);
     } catch (error) {
       console.error("Error fetching leave requests:", error);
     } finally {
