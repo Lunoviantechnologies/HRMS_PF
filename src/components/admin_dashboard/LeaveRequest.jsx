@@ -1,170 +1,110 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Tabs, Tab } from "react-bootstrap";
-import LeaveRequestModel from "./LeaveRequestModel";
 import axios from "axios";
-import backendIP from "../../api";
-import { useAuth } from "../../context/AuthContext";
+import { Table, Button, Spinner, Badge } from "react-bootstrap";
+// import LeaveRequestModal from "./LeaveRequestModal"; // Ensure this modal is created
+import LeaveRequestModal from "./LeaveRequestModel";
+import backendIP from "../../api"; // e.g., "http://192.168.1.58:2020"
 
-export default function LeaveRequest() {
-  const { token } = useAuth();
+const LeaveRequest = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
-  const [filteredRequests, setFilteredRequests] = useState([]);
-  const [selectedTab, setSelectedTab] = useState("ALL");
-
+  const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const fetchLeaveRequests = async () => {
-      try {
-        const res = await axios.get(`${backendIP}/HRMS/api/leaves`);
-        setLeaveRequests(res.data);
-        setFilteredRequests(res.data); // initially show all
-      } catch (err) {
-        console.error("Leave request data not received", err);
-      }
-    };
     fetchLeaveRequests();
   }, []);
 
-  const handleStatusUpdate = async (id, newStatus) => {
-    // console.log(newStatus.toUpperCase());
-    
+  const fetchLeaveRequests = async () => {
     try {
-      await axios.put(
-        `${backendIP}/HRMS/api/leaves/${id}/status`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const updatedRequests = leaveRequests.map((req) =>
-        req.id === id ? { ...req, status: newStatus } : req
-      );
-      setLeaveRequests(updatedRequests);
-      applyFilter(selectedTab, updatedRequests);
-      alert(`Leave status ${newStatus} updated for ID ${id}`);
+      const response = await axios.get(`${backendIP}/HRMS/api/leaves`);
+      setLeaveRequests(response.data);
     } catch (error) {
-      console.error("Error updating status on the backend", error);
-      alert("Failed to update leave status.");
+      console.error("Error fetching leave requests:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleView = (req) => {
-    setSelectedRequest(req);
-    setShowModal(true);
+  const updateLeaveStatus = async (id, status) => {
+    try {
+      await axios.put(`${backendIP}/HRMS/api/leaves/updateStatus/${id}`, {
+        status,
+      });
+      fetchLeaveRequests(); // Refresh after update
+    } catch (err) {
+      console.error("Failed to update status", err);
+    }
   };
 
-  const handleClose = () => {
-    setShowModal(false);
-    setSelectedRequest(null);
-  };
-
-  const applyFilter = (status, allRequests = leaveRequests) => {
-    setSelectedTab(status);
-    if (status === "ALL") {
-      setFilteredRequests(allRequests);
-    } else {
-      const filtered = allRequests.filter((req) => req.status?.toLowerCase() === status.toLowerCase());
-      setFilteredRequests(filtered);
+  const statusBadge = (status) => {
+    switch (status.toLowerCase()) {
+      case "accepted":
+        return <Badge bg="success">ACCEPTED</Badge>;
+      case "rejected":
+        return <Badge bg="danger">REJECTED</Badge>;
+      case "pending":
+        return <Badge bg="warning" text="dark">PENDING</Badge>;
+      default:
+        return <Badge bg="secondary">{status.toUpperCase()}</Badge>;
     }
   };
 
   return (
     <div className="container mt-4">
-      <h5>
-        <strong>All Leave Requests</strong>
-      </h5>
-
-      <Tabs activeKey={selectedTab} onSelect={(k) => applyFilter(k)} className="mb-3" >
-        <Tab eventKey="ALL" title="All" />
-        <Tab eventKey="PENDING" title="Pending" />
-        <Tab eventKey="ACCEPTED" title="Accepted" />
-        <Tab eventKey="REJECTED" title="Rejected" />
-      </Tabs>
-
-      <Table bordered hover>
-        <thead className="table-primary text-center">
-          <tr>
-            <th>Thumbnail</th>
-            <th>Name</th>
-            <th>Leave Type</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.isArray(filteredRequests) && filteredRequests.length > 0 ? (
-            filteredRequests.map((req) => {
-              const status = req.status?.toLowerCase();
-              return (
-                <tr key={req.id} className="text-center align-middle">
-                  <td>
-                    <div
-                      style={{
-                        backgroundColor: "#ccc",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        margin: "auto",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        fontSize: 14,
-                      }}
-                    >
-                      {(req.employeeName?.[0] || "-").toUpperCase()}
-                    </div>
-                  </td>
-                  <td>{req.employeeName}</td>
-                  <td>{req.reason}</td>
-                  <td>{req.startDate}</td>
-                  <td>{req.endDate}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        status === "accepted"
-                          ? "bg-success"
-                          : status === "rejected"
-                          ? "bg-danger"
-                          : "bg-warning text-dark"
-                      }`}
-                    >
-                      {req.status}
-                    </span>
-                  </td>
-                  <td>
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => handleView(req)}
-                    >
-                      View
-                    </Button>
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
+      <h4 className="mb-4">Leave Requests</h4>
+      {loading ? (
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+        </div>
+      ) : (
+        <Table striped bordered hover responsive>
+          <thead className="table-dark">
             <tr>
-              <td colSpan="7" className="text-center py-3">
-                No leave requests found.
-              </td>
+              <th>Employee Name</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
-          )}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {leaveRequests.map((req) => (
+              <tr key={req.id}>
+                <td>{req.employeeName}</td>
+                <td>{req.startDate}</td>
+                <td>{req.endDate}</td>
+                <td>{req.leaveType}</td>
+                <td>{statusBadge(req.status)}</td>
+                <td>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => {
+                      setSelectedRequest(req);
+                      setShowModal(true);
+                    }}
+                  >
+                    View & Update
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
 
-      <LeaveRequestModel
-        show={showModal}
-        onHide={handleClose}
-        request={selectedRequest}
-        onStatusUpdate={handleStatusUpdate}
-      />
+      {selectedRequest && (
+        <LeaveRequestModal
+          show={showModal}
+          onHide={() => setShowModal(false)}
+          request={selectedRequest}
+          onStatusUpdate={updateLeaveStatus}
+        />
+      )}
     </div>
   );
-}
+};
+
+export default LeaveRequest;

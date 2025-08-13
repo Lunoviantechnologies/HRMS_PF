@@ -3,7 +3,7 @@ import axios from "axios";
 import { Card, Form, Button, Spinner, Toast } from "react-bootstrap";
 import backendIP from "../../api";
 
-const LeavePolicyConfig = ({ token }) => {
+const LeavePolicyConfig = () => {
   const [loading, setLoading] = useState(true);
   const [policy, setPolicy] = useState({});
   const [showToast, setShowToast] = useState(false);
@@ -14,9 +14,7 @@ const LeavePolicyConfig = ({ token }) => {
 
   const fetchPolicy = async () => {
     try {
-      const res = await axios.get(`${backendIP}/HRMS/leave/policy`, {
-        headers: { Authorization: token },
-      });
+      const res = await axios.get(`${backendIP}/HRMS/leave/policy`);
       setPolicy(res.data);
     } catch (error) {
       console.error("Error fetching policy:", error);
@@ -34,9 +32,7 @@ const LeavePolicyConfig = ({ token }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${backendIP}/HRMS/leave/policy/update`, policy, {
-        headers: { Authorization: token },
-      });
+      await axios.put(`${backendIP}/HRMS/leave/policy/update`, policy);
       setShowToast(true);
     } catch (error) {
       console.error("Error updating policy:", error);
@@ -58,58 +54,24 @@ const LeavePolicyConfig = ({ token }) => {
             </div>
           ) : (
             <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Annual Leave Days</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="annualLeaveDays"
-                  value={policy.annualLeaveDays || ""}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Casual Leave Days</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="casualLeaveDays"
-                  value={policy.casualLeaveDays || ""}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Sick Leave Days</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="sickLeaveDays"
-                  value={policy.sickLeaveDays || ""}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Maternity Leave Days</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="maternityLeaveDays"
-                  value={policy.maternityLeaveDays || ""}
-                  onChange={handleChange}
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Carry Forward Limit</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="carryForwardLimit"
-                  value={policy.carryForwardLimit || ""}
-                  onChange={handleChange}
-                />
-              </Form.Group>
+              {[
+                { label: "Annual Leave Days", name: "annualLeaveDays" },
+                { label: "Casual Leave Days", name: "casualLeaveDays" },
+                { label: "Sick Leave Days", name: "sickLeaveDays" },
+                { label: "Maternity Leave Days", name: "maternityLeaveDays" },
+                { label: "Carry Forward Limit", name: "carryForwardLimit" },
+              ].map((field) => (
+                <Form.Group className="mb-3" key={field.name}>
+                  <Form.Label>{field.label}</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name={field.name}
+                    value={policy[field.name] || ""}
+                    onChange={handleChange}
+                    required={field.name !== "maternityLeaveDays"}
+                  />
+                </Form.Group>
+              ))}
 
               <div className="d-grid">
                 <Button type="submit" variant="primary">
