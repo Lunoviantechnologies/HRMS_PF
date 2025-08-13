@@ -1,89 +1,101 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 
 export default function Employee_Navbar() {
     const navigate = useNavigate();
-    const { user } = useAuth();
-    console.log(user);
+    const storedUser = localStorage.getItem('loggedUser');
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const adminName = user?.name || "Guest";
 
-    const handleLogout = ()=>{
+    const handleLogout = () => {
         localStorage.removeItem('loggedUser');
         navigate('/');
     };
 
-    const handleAttendence = ()=>{
+    const handleAttendence = () => {
         navigate('/employee_dashboard/attendence');
     };
 
-    const handleLeaveRequest = ()=>{
+    const handleLeaveRequest = () => {
         navigate('/employee_dashboard/leaveRequest');
     };
 
-    const handleProfile = ()=>{
-        // navigate('/employee_dashboard/attendence');
+    const handleProfile = () => {
+        navigate('/employee_dashboard/profile');
     };
 
     return (
-        <nav className="navbar navbar-dark px-3 d-flex justify-content-between align-items-center sticky-top" style={{ height: '100px', backgroundColor: 'rgb(0,0,51)' }}>
-            <div className="d-flex align-items-center">
-                <button className="btn btn-outline-light d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar">
-                    <i className="bi bi-list"></i>
-                </button>
+        <nav 
+            className="navbar navbar-dark sticky-top py-3"
+            style={{ backgroundColor: 'rgb(0,0,51)' }}
+        >
+            <div className="container-fluid">
+                <div className="row w-100 align-items-center">
+                    
+                    {/* Left section - Logo + Title */}
+                    <div className="col-md-4 d-flex align-items-center">
+                        <button
+                            className="btn btn-outline-light d-md-none me-2"
+                            type="button"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#offcanvasSidebar"
+                            aria-controls="offcanvasSidebar"
+                        >
+                            <i className="bi bi-list"></i>
+                        </button>
 
-                <img
-                    src="/lunovianLogo.jpg" // use absolute path if in public/
-                    id="lunovianLogo"
-                    alt="lunovianLogo"
-                    className="me-3"
-                    onClick={() => navigate('/employee_dashboard')}
-                    style={{ height: '80px', width: '80px', borderRadius: '50%', cursor: 'pointer' }}
-                />
+                        <img
+                            src="/lunovianLogo.jpg"
+                            alt="Lunovian Logo"
+                            className="me-3"
+                            onClick={() => navigate('/employee_dashboard')}
+                            style={{ height: '80px', width: '80px', borderRadius: '50%', cursor: 'pointer' }}
+                        />
+                        <span className="navbar-brand mb-0 h1">Lunovian Technologies</span>
+                    </div>
 
-                <a className="navbar-brand mb-0 h1 me-3" href="#">
-                    Lunovian Technologies
-                </a>
-            </div>
+                    {/* Middle section - Actions */}
+                    <div className="col-md-5 d-flex justify-content-center">
+                        <button className='btn btn-none border-0 text-white me-3' onClick={handleProfile}>
+                            Profile
+                        </button>
+                        <button className='btn btn-none border-0 text-white me-3' onClick={handleLeaveRequest}>
+                            Leave Request
+                        </button>
+                        <button className='btn btn-none border-0 text-white' onClick={handleAttendence}>
+                            Attendance
+                        </button>
+                    </div>
 
-            <div className="d-flex align-items-center">
-                <div className='me-3'>
-                    <button className='btn btn-none border-0 text-white' style={{ outline: 'none', boxShadow: 'none' }} onClick={handleProfile}>Profile</button>
-                </div>
-                <div className='me-3'>
-                    <button className='btn btn-none border-0 text-white' style={{ outline: 'none', boxShadow: 'none' }} onClick={handleLeaveRequest}>Leave Request</button>
-                </div>
-                <div className='me-3'>
-                    <button className='btn btn-none border-0 text-white' style={{ outline: 'none', boxShadow: 'none' }} onClick={handleAttendence}>Attendence</button>
-                </div>
+                    {/* Right section - Notifications + User Dropdown */}
+                    <div className="col-md-3 d-flex justify-content-end align-items-center">
+                        <i className="bi bi-bell fs-5 text-white me-3"></i>
+                        <div className="dropdown">
+                            <button
+                                className="btn btn-dark dropdown-toggle"
+                                type="button"
+                                id="dropdownMenuButton"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                <i className="bi bi-person-circle fs-5 me-2"></i>
+                                {adminName}
+                            </button>
+                            <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                                <li>
+                                    <a className="dropdown-item" onClick={() => navigate('/profile')}>Profile</a>
+                                </li>
+                                <li>
+                                    <a className="dropdown-item" onClick={() => navigate('/settings')}>Settings</a>
+                                </li>
+                                <li><hr className="dropdown-divider" /></li>
+                                <li>
+                                    <a className="dropdown-item text-danger" onClick={handleLogout}>Logout</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
 
-                <div className="text-white me-3">
-                    <i className="bi bi-bell fs-5"></i>
-                </div>
-
-                {/* Dropdown starts here */}
-                <div className="dropdown">
-                    <button
-                        className="btn btn-dark dropdown-toggle"
-                        type="button"
-                        id="dropdownMenuButton"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                    >
-                        <span className="me-2 p-1 bg-light rounded-circle"><b className='text-dark'>{ user?.sub[0].toUpperCase() || <i className="bi bi-person-circle fs-5 me-2"></i> }</b></span>
-                        { user?.sub }
-                    </button>
-                    <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                        <li>
-                            <a className="dropdown-item" href="#" onClick={() => navigate('/profile')}>Profile</a>
-                        </li>
-                        <li>
-                            <a className="dropdown-item" href="#" onClick={() => navigate('/settings')}>Settings</a>
-                        </li>
-                        <li><hr className="dropdown-divider" /></li>
-                        <li>
-                            <a className="dropdown-item text-danger" href="#" onClick={handleLogout}>Logout</a>
-                        </li>
-                    </ul>
                 </div>
             </div>
         </nav>
