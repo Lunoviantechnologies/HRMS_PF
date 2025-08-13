@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function Employee_Navbar() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const user = JSON.parse(localStorage.getItem('loggedUser'));
+    const adminName = user.name;
 
     const handleLogout = ()=>{
         localStorage.removeItem('loggedUser');
@@ -69,7 +70,7 @@ export default function Employee_Navbar() {
                         aria-expanded="false"
                     >
                         <i className="bi bi-person-circle fs-5 me-2"></i>
-                        { user?.sub }
+                        {adminName}
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                         <li>

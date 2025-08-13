@@ -19,7 +19,6 @@ const AdminLogin = () => {
 
         axios.post(`${backendIP}/HRMS/login`, auth).then(res => {
             alert('Login Successfull');
-
             let token = "";
             if (typeof res.data === "string") {
                 token = res.data;

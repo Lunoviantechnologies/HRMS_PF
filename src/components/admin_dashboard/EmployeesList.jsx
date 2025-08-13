@@ -127,9 +127,11 @@ const EmployeesList = () => {
                 </tbody>
             </Table>
 
-            {selectedEmp && (
-                <EmployeeModel show={showViewModal} onHide={() => setShowViewModal(false)} employee={selectedEmp} />
-            )}
+            {
+                selectedEmp && (
+                    <EmployeeModel show={showViewModal} onHide={() => setShowViewModal(false)} employee={selectedEmp} />
+                )
+            }
 
             {
                 selectedEmp && (

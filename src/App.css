@@ -15,17 +15,17 @@
 
 /* sidebar styling */
 
-.no-arrow::after{
-    display: none;
+.sidebar-link:hover {
+  background-color: #3f51b5 !important; /* Material Indigo 500 */
+  color: #fff !important;
 }
-.accordion-button:focus,
-.accordion-button:active,
-.accordion-button:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
+
+.sidebar-link.active {
+  background-color: #5c6bc0 !important; /* Indigo 400 */
+  color: #fff !important;
+  font-weight: 600 !important;
 }
-.white-arrow::after{
-    filter: brightness(0) invert(1);
-}
+
+
+
 
