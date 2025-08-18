@@ -19,10 +19,11 @@ export default function Employee_Navbar() {
     const handleLeaveRequest = () => {
         navigate('/employee_dashboard/leaveRequest');
     };
-
-    const handleProfile = () => {
-        navigate('/employee_dashboard/profile');
+      const handleSalary = () => {
+        navigate('/salary');
     };
+    
+
 
     return (
         <nav 
@@ -56,14 +57,14 @@ export default function Employee_Navbar() {
 
                     {/* Middle section - Actions */}
                     <div className="col-md-5 d-flex justify-content-center">
-                        <button className='btn btn-none border-0 text-white me-3' onClick={handleProfile}>
-                            Profile
-                        </button>
                         <button className='btn btn-none border-0 text-white me-3' onClick={handleLeaveRequest}>
                             Leave Request
                         </button>
                         <button className='btn btn-none border-0 text-white' onClick={handleAttendence}>
                             Attendance
+                        </button> 
+                        <button className='btn btn-none border-0 text-white' onClick={handleSalary}>
+                            SalaryDetails
                         </button>
                     </div>
 
@@ -83,10 +84,10 @@ export default function Employee_Navbar() {
                             </button>
                             <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                                 <li>
-                                    <a className="dropdown-item" onClick={() => navigate('/profile')}>Profile</a>
+                                    <a className="dropdown-item"onClick={() => navigate('/employee_dashboard/profile')}>Profile</a>
                                 </li>
                                 <li>
-                                    <a className="dropdown-item" onClick={() => navigate('/settings')}>Settings</a>
+                                    <a className="dropdown-item" onClick={() => navigate('/employee_dashboard/settings')}>Settings</a>
                                 </li>
                                 <li><hr className="dropdown-divider" /></li>
                                 <li>

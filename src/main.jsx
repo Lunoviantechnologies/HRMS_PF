@@ -13,10 +13,12 @@ import AdminSignUp from './components/authenticate/AdminSignUp.jsx';
 import AdminForgotPassword from './components/authenticate/adminForgetPassword.jsx';
 import Employee_dashboard from './components/employee_dashboard/Employee_dashboard.jsx';
 import AttendancePunch from './components/employee_dashboard/AttendencePunch.jsx';
-import Employee_LeaveRequest from './components/employee_dashboard/employee_LeaveRequest.jsx';
+import Employee_LeaveRequest from './components/employee_dashboard/Employee_LeaveRequest.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import LeavePolicyConfig from './components/admin_dashboard/LeavePolicyConfig.jsx';
-
+import Profile from './components/employee_dashboard/Profile.jsx';
+import Settings from './components/employee_dashboard/Settings.jsx';
+import SalaryDetails from './components/employee_dashboard/SalaryDetails.jsx'
 const router = createBrowserRouter([
     {
         path: '/',
@@ -71,6 +73,18 @@ const router = createBrowserRouter([
             {
                 path: 'leaveRequest',
                 element: <Employee_LeaveRequest />
+            },
+                 {
+                path: 'profile',
+                element: <Profile />
+            },
+                 {
+                path: 'settings',
+                element: <Settings />
+            },
+                  {
+                path: 'salary',
+                element: <SalaryDetails/>
             }
         ]
     }

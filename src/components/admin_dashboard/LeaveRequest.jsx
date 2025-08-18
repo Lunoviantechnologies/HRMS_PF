@@ -32,7 +32,7 @@ export default function LeaveRequest() {
     
     try {
       await axios.put(
-        `${backendIP}/HRMS/api/leaves/${id}/status`,
+        `${backendIP}/HRMS/api/leaves/updateStatus/${id}`,
         { status: newStatus },
         {
           headers: {
