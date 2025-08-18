@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Employee_Navbar() {
     const navigate = useNavigate();
-    const storedUser = localStorage.getItem('loggedUser');
-    const user = storedUser ? JSON.parse(storedUser) : null;
-    const adminName = user?.name || "Guest";
+    const { user, logout } = useAuth();
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/');
+        }
+    }, [user, navigate]);
 
     const handleLogout = () => {
-        localStorage.removeItem('loggedUser');
-        navigate('/');
+        logout(navigate);
     };
 
     const handleAttendence = () => {
@@ -26,13 +30,13 @@ export default function Employee_Navbar() {
 
 
     return (
-        <nav 
+        <nav
             className="navbar navbar-dark sticky-top py-3"
             style={{ backgroundColor: 'rgb(0,0,51)' }}
         >
             <div className="container-fluid">
                 <div className="row w-100 align-items-center">
-                    
+
                     {/* Left section - Logo + Title */}
                     <div className="col-md-4 d-flex align-items-center">
                         <button
@@ -72,15 +76,15 @@ export default function Employee_Navbar() {
                     <div className="col-md-3 d-flex justify-content-end align-items-center">
                         <i className="bi bi-bell fs-5 text-white me-3"></i>
                         <div className="dropdown">
-                            <button
-                                className="btn btn-dark dropdown-toggle"
-                                type="button"
-                                id="dropdownMenuButton"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                            >
-                                <i className="bi bi-person-circle fs-5 me-2"></i>
-                                {adminName}
+                            <button className="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                                aria-expanded="false" style={{ display: "flex", alignItems: "center" }}>
+                                <span
+                                    className="bg-light rounded-circle d-flex justify-content-center align-items-center fw-bold text-dark me-2"
+                                    style={{ width: "32px", height: "32px", lineHeight: "32px", fontSize: "14px" }}
+                                >
+                                    {user?.sub?.[0].toUpperCase()}
+                                </span>
+                                <span>{user?.sub}</span>
                             </button>
                             <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                                 <li>
@@ -91,7 +95,7 @@ export default function Employee_Navbar() {
                                 </li>
                                 <li><hr className="dropdown-divider" /></li>
                                 <li>
-                                    <a className="dropdown-item text-danger" onClick={handleLogout}>Logout</a>
+                                    <a className="dropdown-item text-danger btn" onClick={handleLogout}>Logout</a>
                                 </li>
                             </ul>
                         </div>

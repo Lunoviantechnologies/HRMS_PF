@@ -1,15 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Box, TextField, Button, MenuItem, Typography, Select, InputLabel, FormControl } from "@mui/material";
+import { useAuth } from "../../context/AuthContext";
+import backendIP from "../../api";
 
 const Employee_LeaveRequest = () => {
+    const { user, token } = useAuth();
     const [formData, setFormData] = useState({
-        employeeId: "",
+        employeeEmail: `${user?.id}`,
         leaveType: "",
         startDate: "",
         endDate: "",
         reason: "",
-        status: "Pending",
+        status: "PENDING",
     });
 
     const [successMsg, setSuccessMsg] = useState("");
@@ -21,21 +24,27 @@ const Employee_LeaveRequest = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log(formData);
 
         try {
-            const response = await axios.post("http://192.168.1.43:2323/api/LeaveRequest/submit", formData);
+            const response = await axios.post(`${backendIP}/api/leaves/apply-leave/${user.id}`, formData, {
+                headers : {
+                    Authorization : token,
+                    "Content-Type": "application/json"
+                }
+            });
             setSuccessMsg("Leave request submitted successfully!");
             setErrorMsg("");
             console.log("Submitted:", response.data);
 
             // Clear form
             setFormData({
-                employeeId: "",
+                employeeId: `${user?.id}`,
                 leaveType: "",
                 startDate: "",
                 endDate: "",
                 reason: "",
-                status: "Pending",
+                status: "PENDING",
             });
         } catch (error) {
             setErrorMsg("Failed to submit leave request.");
@@ -45,7 +54,7 @@ const Employee_LeaveRequest = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 500, margin: "auto", mt: 4, p: 3, boxShadow: 3, borderRadius: 2 }}>
+        <Box sx={{ maxWidth: 500, margin: "auto", mt: 4, p: 3, boxShadow: 5, borderRadius: 2, backgroundColor : 'white'}}>
             <Typography variant="h5" gutterBottom>
                 Leave Request Form
             </Typography>
@@ -54,8 +63,8 @@ const Employee_LeaveRequest = () => {
             {errorMsg && <Typography color="red">{errorMsg}</Typography>}
 
             <form onSubmit={handleSubmit}>
-                <TextField fullWidth label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleChange} margin="normal"
-                    required />
+                <TextField fullWidth label="Employee Email ID" name="employeeEmail" value={formData.employeeEmail} disabled onChange={handleChange} margin="normal" 
+                    sx={{'& .MuiInputBase-input' : { color: 'red' }, '& .MuiInputLabel-root': { color: 'red'}, '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: 'red' }}}/>
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Leave Type</InputLabel>
                     <Select name="leaveType" value={formData.leaveType} onChange={handleChange} required>
@@ -98,14 +107,6 @@ const Employee_LeaveRequest = () => {
                     rows={3}
                     required
                 />
-                <FormControl fullWidth margin="normal">
-                    <InputLabel>Status</InputLabel>
-                    <Select name="status" value={formData.status} onChange={handleChange}>
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="Approved">Approved</MenuItem>
-                        <MenuItem value="Rejected">Rejected</MenuItem>
-                    </Select>
-                </FormControl>
 
                 <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                     Submit Request
