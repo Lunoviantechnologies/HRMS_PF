@@ -65,22 +65,22 @@ export default function Navbar() {
 
                     {/* User Dropdown */}
                     <div className="dropdown">
-                        <button
-                            className="btn btn-dark dropdown-toggle"
-                            type="button"
-                            id="dropdownMenuButton"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                        >
-                            <i className="bi bi-person-circle fs-5 me-2"></i>
-                            {user?.sub}
+                        <button className="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                            aria-expanded="false" style={{ display: "flex", alignItems: "center" }}>
+                            <span
+                                className="bg-light rounded-circle d-flex justify-content-center align-items-center fw-bold text-dark me-2"
+                                style={{ width: "32px", height: "32px", lineHeight: "32px", fontSize: "14px" }}
+                            >
+                                {user?.sub?.[0].toUpperCase()}
+                            </span>
+                            <span>{user?.sub}</span>
                         </button>
                         <ul className="dropdown-menu dropdown-menu-end">
                             <li>
-                                <button className="dropdown-item" onClick={() => navigate('/profile')}>Profile</button>
+                                <button className="dropdown-item" onClick={() => navigate('/dashboard/profile_admin')}>Profile</button>
                             </li>
                             <li>
-                                <button className="dropdown-item" onClick={() => navigate('/settings')}>Settings</button>
+                                <button className="dropdown-item" onClick={() => navigate('/dashboard/settings_admin')}>Settings</button>
                             </li>
                             <li><hr className="dropdown-divider" /></li>
                             <li>

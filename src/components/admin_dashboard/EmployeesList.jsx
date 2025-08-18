@@ -24,6 +24,17 @@ const EmployeesList = () => {
         setShowViewModal(true);
     };
 
+    useEffect(() => {
+        axios.get(`${backendIP}/HRMS/api/employees/all`, {
+            headers: {
+                Authorization: token
+            }
+        }).then(res => {
+            // console.log(res.data);
+            setAllEmployeesList(res.data);
+        }).catch(err => console.log(err));
+    }, [token]);
+
     const handleUpdate = (employee) => {
         setSelectedEmp(employee);
         // console.log(employee.id);
@@ -55,17 +66,6 @@ const EmployeesList = () => {
     const handleAddEmployee = () => {
         navigate('/dashboard/addEmployee');
     };
-
-    useEffect(() => {
-        axios.get(`${backendIP}/HRMS/employee/all`, {
-            headers: {
-                Authorization: token
-            }
-        }).then(res => {
-            // console.log(res.data);
-            setAllEmployeesList(res.data);
-        }).catch(err => console.log(err));
-    }, [token]);
 
     return (
         <div>

@@ -10,7 +10,6 @@ export default function LeaveRequest() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [selectedTab, setSelectedTab] = useState("ALL");
-
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -29,10 +28,10 @@ export default function LeaveRequest() {
 
   const handleStatusUpdate = async (id, newStatus) => {
     // console.log(newStatus.toUpperCase());
-    
+
     try {
       await axios.put(
-        `${backendIP}/HRMS/api/leaves/${id}/status`,
+        `${backendIP}/HRMS/api/leaves/updateStatus/${id}`,
         { status: newStatus },
         {
           headers: {
@@ -105,18 +104,10 @@ export default function LeaveRequest() {
               return (
                 <tr key={req.id} className="text-center align-middle">
                   <td>
-                    <div
-                      style={{
-                        backgroundColor: "#ccc",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        margin: "auto",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        fontSize: 14,
-                      }}
+                    <div style={{
+                      backgroundColor: "#ccc", width: 40, height: 40, borderRadius: "50%", margin: "auto", display: "flex", justifyContent: "center",
+                      alignItems: "center", fontSize: 14
+                    }}
                     >
                       {(req.employeeName?.[0] || "-").toUpperCase()}
                     </div>
@@ -127,13 +118,12 @@ export default function LeaveRequest() {
                   <td>{req.endDate}</td>
                   <td>
                     <span
-                      className={`badge ${
-                        status === "accepted"
+                      className={`badge ${status === "accepted"
                           ? "bg-success"
                           : status === "rejected"
-                          ? "bg-danger"
-                          : "bg-warning text-dark"
-                      }`}
+                            ? "bg-danger"
+                            : "bg-warning text-dark"
+                        }`}
                     >
                       {req.status}
                     </span>
@@ -167,4 +157,4 @@ export default function LeaveRequest() {
       />
     </div>
   );
-}
+};

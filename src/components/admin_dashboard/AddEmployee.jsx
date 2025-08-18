@@ -56,6 +56,7 @@ const AddEmployee = () => {
         ifscCode: '',
         bankBranch: '',
         profilePhoto: '',
+        imageDir: '',
         document1: '',
         document2: '',
         document3: '',
@@ -123,17 +124,18 @@ const AddEmployee = () => {
             ifscCode: '',
             bankBranch: '',
             profilePhoto: '',
+            imageDir: '',
             document1: '',
             document2: '',
             document3: '',
-            basicEmployeeSalary: '',
+            basicEmployeeSalary: 0,
             password: ''
         });
         setStep(0);
         localStorage.removeItem('currentStep');
 
         axios({
-            url: `${backendIP}/HRMS/employee/register`,
+            url: `${backendIP}/HRMS/api/employees/register`,
             method: 'post',
             headers: {
                 Authorization: token,
@@ -274,6 +276,17 @@ const AddEmployee = () => {
                                 const file = event.target.files[0];
                                 if (file) {
                                     setFormData(prev => ({ ...prev, profilePhoto: file }));
+                                }
+                            }}
+                            />
+                        </Button>
+
+                        <Button component="label" id="imageDir" variant="contained" startIcon={<CloudUploadIcon />}>
+                            imageDir
+                            <VisuallyHiddenInput type="file" accept="image/*" onChange={(event) => {
+                                const file = event.target.files[0];
+                                if (file) {
+                                    setFormData(prev => ({ ...prev, imageDir: file }));
                                 }
                             }}
                             />
