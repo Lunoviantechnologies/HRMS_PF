@@ -9,45 +9,13 @@ const AttendancePunch = () => {
   const [workingHours, setWorkingHours] = useState("00:00:00");
   const webcamRef = useRef(null);
 
-  const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // Replace with your key
+  const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // 🔑 Replace with your key
 
   const videoConstraints = {
     width: 320,
     height: 240,
     facingMode: "user",
   };
-
-  // 📌 Get location in words with PIN code
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      const watcher = navigator.geolocation.watchPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          try {
-            const res = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
-            );
-            const data = await res.json();
-            if (data.results && data.results.length > 0) {
-              setLocation(data.results[0].formatted_address);
-            } else {
-              setLocation("Address not found");
-            }
-          } catch (error) {
-            console.error("Error fetching address:", error);
-            setLocation("Error fetching location");
-          }
-        },
-        (err) => console.error(err),
-        { enableHighAccuracy: true, maximumAge: 1000 }
-      );
-
-      return () => navigator.geolocation.clearWatch(watcher);
-    } else {
-      alert("Geolocation is not supported by your browser.");
-    }
-  }, []);
 
   // 📌 Working hours counter
   useEffect(() => {
@@ -66,6 +34,37 @@ const AttendancePunch = () => {
     return () => clearInterval(timer);
   }, [loginTime]);
 
+  // 📌 Fetch location when punching in
+  const fetchLocation = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+      );
+      const data = await res.json();
+
+      if (data.results && data.results.length > 0) {
+        const addressComponents = data.results[0].address_components;
+        const city = addressComponents.find((c) =>
+          c.types.includes("locality")
+        )?.long_name;
+        const state = addressComponents.find((c) =>
+          c.types.includes("administrative_area_level_1")
+        )?.long_name;
+        const pincode = addressComponents.find((c) =>
+          c.types.includes("postal_code")
+        )?.long_name;
+
+        const formatted = `${city || ""}, ${state || ""}, ${pincode || ""}`;
+        setLocation(formatted.trim() || "Location not available");
+      } else {
+        setLocation("Address not found");
+      }
+    } catch (error) {
+      console.error("Error fetching address:", error);
+      setLocation("Unable to fetch address");
+    }
+  };
+
   const handlePunchIn = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     if (!imageSrc) {
@@ -73,17 +72,27 @@ const AttendancePunch = () => {
       return;
     }
 
-    const punchedAt = new Date().toLocaleString();
-    setCapturedImage(imageSrc);
-    setLoginTime(new Date());
-    setPunchedData({
-      type: "Punch In",
-      time: punchedAt,
-      location,
-      image: imageSrc,
-    });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        fetchLocation(pos.coords.latitude, pos.coords.longitude);
 
-    alert("Punch In Successful!");
+        const punchedAt = new Date().toLocaleString();
+        setCapturedImage(imageSrc);
+        setLoginTime(new Date());
+        setPunchedData({
+          type: "Punch In",
+          time: punchedAt,
+          location,
+          image: imageSrc,
+        });
+        alert("Punch In Successful!");
+      },
+      (err) => {
+        console.error("Error getting location:", err);
+        setLocation("Location not available");
+      },
+      { enableHighAccuracy: true }
+    );
   };
 
   const handlePunchOut = () => {
@@ -93,7 +102,9 @@ const AttendancePunch = () => {
       type: "Punch Out",
       time: punchedAt,
       workingHours,
+      location,
     }));
+    setLoginTime(null); // ✅ Stop working hours
     alert("Punch Out Successful!");
   };
 
@@ -101,9 +112,9 @@ const AttendancePunch = () => {
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h2>Attendance Punch</h2>
 
-      {/* Live Location in words */}
+      {/* Live Location */}
       <p>
-        <strong>Live Location:</strong> {location || "Fetching location..."}
+        <strong>Location:</strong> {location || "Not available"}
       </p>
 
       {/* Working Hours */}
@@ -148,7 +159,7 @@ const AttendancePunch = () => {
             <strong>Time:</strong> {punchedData.time}
           </p>
           <p>
-            <strong>Location:</strong> {punchedData.location}
+            <strong>Location:</strong> {location}
           </p>
           {punchedData.image && (
             <img
