@@ -11,8 +11,7 @@ const Employee_LeaveRequest = () => {
         leaveType: "",
         startDate: "",
         endDate: "",
-        reason: "",
-        status: "PENDING",
+        reason: ""
     });
 
     const [successMsg, setSuccessMsg] = useState("");
@@ -27,7 +26,7 @@ const Employee_LeaveRequest = () => {
         console.log(formData);
 
         try {
-            const response = await axios.post(`${backendIP}/api/leaves/apply-leave/${user.id}`, formData, {
+            const response = await axios.post(`${backendIP}/HRMS/api/leaves/apply-leave/${user.id}`, formData, {
                 headers : {
                     Authorization : token,
                     "Content-Type": "application/json"
@@ -39,12 +38,11 @@ const Employee_LeaveRequest = () => {
 
             // Clear form
             setFormData({
-                employeeId: `${user?.id}`,
+                employeeEmail: `${user?.id}`,
                 leaveType: "",
                 startDate: "",
                 endDate: "",
-                reason: "",
-                status: "PENDING",
+                reason: ""
             });
         } catch (error) {
             setErrorMsg("Failed to submit leave request.");

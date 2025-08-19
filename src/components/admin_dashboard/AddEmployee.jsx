@@ -19,7 +19,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 const AddEmployee = () => {
-    const {token} = useAuth();    
+    const { token } = useAuth();
     const [step, setStep] = useState(() => {
         const savedStep = localStorage.getItem('currentStep');
         return savedStep ? parseInt(savedStep, 10) : 0;
@@ -55,11 +55,11 @@ const AddEmployee = () => {
         accountNo: '',
         ifscCode: '',
         bankBranch: '',
-        profilePhoto: '',
-        imageDir: '',
-        document1: '',
-        document2: '',
-        document3: '',
+        faceImages: [],
+        profilePhoto: null,
+        document1: null,
+        document2: null,
+        document3: null,
         basicEmployeeSalary: 0,
         password: ''
     });
@@ -84,14 +84,6 @@ const AddEmployee = () => {
     const handleBack = () => setStep(prev => prev - 1);
 
     const handleSubmit = () => {
-        console.log("Submitted Data:", formData);
-
-        const formDataToSend = new FormData();
-        for (const key in formData) {
-            if (formData[key]) {
-                formDataToSend.append(key, formData[key]);
-            }
-        };
 
         setFormData({
             prefix: '',
@@ -123,32 +115,56 @@ const AddEmployee = () => {
             accountNo: '',
             ifscCode: '',
             bankBranch: '',
-            profilePhoto: '',
-            imageDir: '',
-            document1: '',
-            document2: '',
-            document3: '',
+            faceImages: [],
+            profilePhoto: null,
+            document1: null,
+            document2: null,
+            document3: null,
             basicEmployeeSalary: 0,
             password: ''
         });
         setStep(0);
         localStorage.removeItem('currentStep');
 
-        axios({
-            url: `${backendIP}/HRMS/api/employees/register`,
-            method: 'post',
+        console.log("Submitted Data:", formData);
+
+        const formDataToSend = new FormData();
+
+        // --- Append normal fields ---
+        for (const key in formData) {
+            if (key !== "faceImages" && key !== "profilePhoto" && key !== "document1" && key !== "document2" && key !== "document3") {
+                formDataToSend.append(key, formData[key]);
+            }
+        }
+
+        // --- Append multiple face images ---
+        if (formData.faceImages && formData.faceImages.length > 0) {
+            formData.faceImages.forEach(file => {
+                formDataToSend.append("faceImages", file);
+            });
+        }
+
+        // --- Append single files ---
+        if (formData.profilePhoto) formDataToSend.append("profilePhoto", formData.profilePhoto);
+        if (formData.document1) formDataToSend.append("document1", formData.document1);
+        if (formData.document2) formDataToSend.append("document2", formData.document2);
+        if (formData.document3) formDataToSend.append("document3", formData.document3);
+
+        // --- Send request ---
+        axios.post(`${ backendIP }/HRMS/api/employees/register`, formDataToSend, {
             headers: {
                 Authorization: token,
-                'Content-Type': 'multipart/form-data'
-            },
-            data: formDataToSend
-        }).then(res => {
-            console.log('employee data sent successfully', res.data);
-            alert("Employee data submitted successfully!");
-        }).catch(err => {
-            console.log('data not sent', err);
-            alert('Employee data not registered');
-        });
+                "Content-Type": "multipart/form-data"
+            }
+        })
+            .then(res => {
+                console.log("Employee registered:", res.data);
+                alert("Employee data submitted successfully!");
+            })
+            .catch(err => {
+                console.error("Error registering employee:", err);
+                alert("Employee data not registered");
+            });
     };
 
     const validateStep = (step) => {
@@ -198,7 +214,11 @@ const AddEmployee = () => {
                         <TextField id="lastName" label="Last Name" value={formData.lastName} onChange={handleChange} required />
                         <TextField id="emailId" label="Email ID" value={formData.emailId} onChange={handleChange} required />
                         <TextField id="contactNumber1" label="Contact Number" value={formData.contactNumber1} onChange={handleChange} required />
-                        <TextField id="gender" label="Gender" value={formData.gender} onChange={handleChange} />
+                        <TextField select label="Gender" name="gender" value={formData.gender} onChange={handleChange}>
+                            <MenuItem value="Male">Male</MenuItem>
+                            <MenuItem value="Female">Female</MenuItem>
+                            <MenuItem value="Other">Other</MenuItem>
+                        </TextField>
                         <TextField id="dateOfBirth" type="date" label="Date Of Birth" value={formData.dateOfBirth} onChange={handleChange} InputLabelProps={{ shrink: true }} />
                         <TextField id="nationality" label="Nationality" value={formData.nationality} onChange={handleChange} />
                         <TextField id="workEmail" label="Work Email ID" value={formData.workEmail} onChange={handleChange} />
@@ -227,7 +247,12 @@ const AddEmployee = () => {
                     <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
                         <TextField id="fatherName" label="Father's Name" value={formData.fatherName} onChange={handleChange} />
                         <TextField id="motherName" label="Mother's Name" value={formData.motherName} onChange={handleChange} />
-                        <TextField id="maritalStatus" label="Marital Status" value={formData.maritalStatus} onChange={handleChange} />
+                        <TextField select label="Marital Status" name="maritalStatus" value={formData.maritalStatus} onChange={handleChange}>
+                            <MenuItem value="Single">Single</MenuItem>
+                            <MenuItem value="Married">Married</MenuItem>
+                            <MenuItem value="Divorced">Divorced</MenuItem>
+                            <MenuItem value="Widowed">Widowed</MenuItem>
+                        </TextField>
                     </Box>
                 </Card>
             )}
@@ -281,13 +306,11 @@ const AddEmployee = () => {
                             />
                         </Button>
 
-                        <Button component="label" id="imageDir" variant="contained" startIcon={<CloudUploadIcon />}>
-                            imageDir
-                            <VisuallyHiddenInput type="file" accept="image/*" onChange={(event) => {
-                                const file = event.target.files[0];
-                                if (file) {
-                                    setFormData(prev => ({ ...prev, imageDir: file }));
-                                }
+                        <Button component="label" id="faceImages" variant="contained" startIcon={<CloudUploadIcon />}>
+                            Upload Face Images
+                            <VisuallyHiddenInput type="file" accept="image/*" multiple onChange={(event) => {
+                                const files = Array.from(event.target.files);
+                                setFormData(prev => ({ ...prev, faceImages: files }));
                             }}
                             />
                         </Button>
