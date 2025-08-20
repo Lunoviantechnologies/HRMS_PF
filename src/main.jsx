@@ -19,6 +19,8 @@ import LeavePolicyConfig from './components/admin_dashboard/LeavePolicyConfig.js
 import Profile from './components/employee_dashboard/Profile.jsx';
 import { Settings } from '@mui/icons-material';
 import SalaryDetails from './components/employee_dashboard/SalaryDetails.jsx';
+import Admin_Profile from './components/admin_dashboard/admin_account/Admin_Profile.jsx';
+import Admin_Settings from './components/admin_dashboard/admin_account/Admin_Settings.jsx';
 
 const router = createBrowserRouter([
     {
