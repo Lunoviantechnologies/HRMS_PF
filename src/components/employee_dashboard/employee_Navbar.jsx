@@ -24,7 +24,7 @@ export default function Employee_Navbar() {
         navigate('/employee_dashboard/leaveRequest');
     };
       const handleSalary = () => {
-        navigate('/salary');
+        navigate('/employee_dashboard/salary');
     };
     
 
