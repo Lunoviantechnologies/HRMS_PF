@@ -21,7 +21,7 @@ export default function LeaveRequest() {
             Authorization: token
           }
         });
-        console.log(res.data);
+        // console.log(res.data);
 
         setLeaveRequests(res.data);
         setFilteredRequests(res.data); // initially show all
