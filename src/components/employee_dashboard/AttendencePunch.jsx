@@ -1,180 +1,124 @@
 import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
+import axios from "axios";
+import backendIP from "../../api"; // ✅ your backend base URL
 
 const AttendancePunch = () => {
-  const [capturedImage, setCapturedImage] = useState(null);
-  const [location, setLocation] = useState("");
-  const [punchedData, setPunchedData] = useState(null);
-  const [loginTime, setLoginTime] = useState(null);
-  const [workingHours, setWorkingHours] = useState("00:00:00");
   const webcamRef = useRef(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [message, setMessage] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [location, setLocation] = useState("");
 
-  const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // 🔑 Replace with your key
-
-  const videoConstraints = {
-    width: 320,
-    height: 240,
-    facingMode: "user",
-  };
-
-  // 📌 Working hours counter
+  // ✅ Live Clock
   useEffect(() => {
-    if (!loginTime) return;
-
-    const timer = setInterval(() => {
-      const now = new Date();
-      const diff = now - loginTime;
-      const hours = String(Math.floor(diff / 3600000)).padStart(2, "0");
-      const minutes = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
-      const seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
-
-      setWorkingHours(`${hours}:${minutes}:${seconds}`);
-    }, 1000);
-
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, [loginTime]);
+  }, []);
 
-  // 📌 Fetch location when punching in
-  const fetchLocation = async (lat, lng) => {
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
-      );
-      const data = await res.json();
-
-      if (data.results && data.results.length > 0) {
-        const addressComponents = data.results[0].address_components;
-        const city = addressComponents.find((c) =>
-          c.types.includes("locality")
-        )?.long_name;
-        const state = addressComponents.find((c) =>
-          c.types.includes("administrative_area_level_1")
-        )?.long_name;
-        const pincode = addressComponents.find((c) =>
-          c.types.includes("postal_code")
-        )?.long_name;
-
-        const formatted = `${city || ""}, ${state || ""}, ${pincode || ""}`;
-        setLocation(formatted.trim() || "Location not available");
-      } else {
-        setLocation("Address not found");
-      }
-    } catch (error) {
-      console.error("Error fetching address:", error);
-      setLocation("Unable to fetch address");
+  // ✅ Fetch User Location (Address instead of lat/lon)
+  const fetchLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await response.json();
+          setLocation(data.display_name || "Location not found");
+        } catch (err) {
+          setLocation("Unable to fetch location");
+        }
+      });
     }
   };
 
-  const handlePunchIn = () => {
+  useEffect(() => {
+    fetchLocation();
+  }, []);
+
+  // ✅ Capture Image from Webcam
+  const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
-    if (!imageSrc) {
-      alert("Unable to capture image.");
-      return;
+    setCapturedImage(imageSrc);
+  };
+
+  // ✅ Convert base64 → File (needed for multipart/form-data)
+  const dataURLtoFile = (dataUrl, filename) => {
+    let arr = dataUrl.split(","), mime = arr[0].match(/:(.*?);/)[1];
+    let bstr = atob(arr[1]);
+    let n = bstr.length;
+    let u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
     }
+    return new File([u8arr], filename, { type: mime });
+  };
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        fetchLocation(pos.coords.latitude, pos.coords.longitude);
+  // ✅ Send Captured Face to Backend
+  // ✅ Send Captured Face to Backend
+const sendToBackend = async () => {
+  if (!capturedImage) {
+    setMessage("⚠️ Please capture your face first.");
+    return;
+  }
 
-        const punchedAt = new Date().toLocaleString();
-        setCapturedImage(imageSrc);
-        setLoginTime(new Date());
-        setPunchedData({
-          type: "Punch In",
-          time: punchedAt,
-          location,
-          image: imageSrc,
-        });
-        alert("Punch In Successful!");
-      },
-      (err) => {
-        console.error("Error getting location:", err);
-        setLocation("Location not available");
-      },
-      { enableHighAccuracy: true }
+  try {
+    const file = dataURLtoFile(capturedImage, "captured.jpg");
+
+    // Use FormData because backend expects multipart/form-data
+    const formData = new FormData();
+    formData.append("file", file); // ✅ FIX: must be "file", not "capturedPhoto"
+
+    const res = await axios.post(
+      `${backendIP}/HRMS/api/attendance/mark`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
-  };
 
-  const handlePunchOut = () => {
-    const punchedAt = new Date().toLocaleString();
-    setPunchedData((prev) => ({
-      ...prev,
-      type: "Punch Out",
-      time: punchedAt,
-      workingHours,
-      location,
-    }));
-    setLoginTime(null); // ✅ Stop working hours
-    alert("Punch Out Successful!");
-  };
+    setMessage(res.data.message || "✅ Attendance marked!");
+  } catch (err) {
+    console.error("❌ Error marking attendance:", err.response?.data || err.message);
+    setMessage("❌ Error: " + (err.response?.data || err.message));
+  }
+};
+
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
-      <h2>Attendance Punch</h2>
+      <h2>📌 Attendance Punch</h2>
+      <h3>{currentTime.toLocaleTimeString()}</h3>
 
-      {/* Live Location */}
-      <p>
-        <strong>Location:</strong> {location || "Not available"}
-      </p>
+      <Webcam
+        audio={false}
+        ref={webcamRef}
+        screenshotFormat="image/jpeg"
+        width={320}
+        height={240}
+      />
+      <br />
 
-      {/* Working Hours */}
-      {loginTime && (
-        <p>
-          <strong>Working Hours:</strong> {workingHours}
-        </p>
-      )}
+      <button onClick={capture} style={{ margin: "10px", padding: "10px" }}>
+        📸 Capture
+      </button>
+      <button
+        onClick={sendToBackend}
+        disabled={!capturedImage}
+        style={{ margin: "10px", padding: "10px" }}
+      >
+        🚀 Punch In
+      </button>
 
-      {/* Webcam */}
-      {!capturedImage && (
-        <>
-          <Webcam
-            audio={false}
-            height={240}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            width={320}
-            videoConstraints={videoConstraints}
-          />
-          <br />
-          <button onClick={handlePunchIn} style={{ marginTop: 10 }}>
-            Punch In
-          </button>
-        </>
-      )}
-
-      {/* Punch Out */}
-      {capturedImage && punchedData?.type === "Punch In" && (
-        <div style={{ marginTop: 10 }}>
-          <button onClick={handlePunchOut} style={{ marginTop: 10 }}>
-            Punch Out
-          </button>
+      {capturedImage && (
+        <div>
+          <h4>Preview</h4>
+          <img src={capturedImage} alt="captured" width={220} />
         </div>
       )}
 
-      {/* Details */}
-      {punchedData && (
-        <div style={{ marginTop: 20 }}>
-          <h3>{punchedData.type} Details</h3>
-          <p>
-            <strong>Time:</strong> {punchedData.time}
-          </p>
-          <p>
-            <strong>Location:</strong> {location}
-          </p>
-          {punchedData.image && (
-            <img
-              src={punchedData.image}
-              alt="Captured"
-              style={{ width: 200, borderRadius: 10 }}
-            />
-          )}
-          {punchedData.type === "Punch Out" && (
-            <p>
-              <strong>Total Working Hours:</strong> {punchedData.workingHours}
-            </p>
-          )}
-        </div>
-      )}
+      <p>📍 {location}</p>
+      <p>{message}</p>
     </div>
   );
 };
