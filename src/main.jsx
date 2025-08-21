@@ -17,7 +17,7 @@ import Employee_LeaveRequest from './components/employee_dashboard/Employee_Leav
 import { AuthProvider } from './context/AuthContext.jsx';
 import LeavePolicyConfig from './components/admin_dashboard/LeavePolicyConfig.jsx';
 import Profile from './components/employee_dashboard/Profile.jsx';
-import { Settings } from '@mui/icons-material';
+import Settings from './components/employee_dashboard/Settings.jsx';
 import SalaryDetails from './components/employee_dashboard/SalaryDetails.jsx';
 import Admin_Profile from './components/admin_dashboard/admin_account/Admin_Profile.jsx';
 import Admin_Settings from './components/admin_dashboard/admin_account/Admin_Settings.jsx';

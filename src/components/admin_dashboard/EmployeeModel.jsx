@@ -60,7 +60,7 @@ const EmployeeModel = ({ show, onHide, employee }) => {
               <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.previousExperience || ""}</Col>
             </Row>
             <Row className="mb-2">
-              <Col md={5}><strong>Monthly Salary:</strong></Col>
+              <Col md={5}><strong>Salary:</strong></Col>
               <Col md={7} style={{ backgroundColor: "#dff6f0" }}>{employee.basicEmployeeSalary || ""}</Col>
             </Row>
             <Row className="mb-2">

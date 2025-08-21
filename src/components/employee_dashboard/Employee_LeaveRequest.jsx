@@ -32,6 +32,7 @@ const Employee_LeaveRequest = () => {
                     "Content-Type": "application/json"
                 }
             });
+            alert("Leave request submitted successfully!")
             setSuccessMsg("Leave request submitted successfully!");
             setErrorMsg("");
             console.log("Submitted:", response.data);
@@ -68,8 +69,10 @@ const Employee_LeaveRequest = () => {
                     <Select name="leaveType" value={formData.leaveType} onChange={handleChange} required>
                         <MenuItem value="Sick Leave">Sick Leave</MenuItem>
                         <MenuItem value="Casual Leave">Casual Leave</MenuItem>
-                        <MenuItem value="Paid Leave">Paid Leave</MenuItem>
+                        <MenuItem value="Earned Leave">Earned Leave</MenuItem>
                         <MenuItem value="Unpaid Leave">Unpaid Leave</MenuItem>
+                        <MenuItem value="Compensatory Leave">Compensatory Off</MenuItem>
+                        <MenuItem value="Maternity/Paternity Leave">Maternity/Paternity Leave</MenuItem>
                     </Select>
                 </FormControl>
                 <TextField

@@ -45,18 +45,6 @@ export default function Navbar() {
                 </div>
 
                 <div className="d-flex align-items-center">
-                    {/* Search Bar */}
-                    <div className="input-group me-3 d-none d-sm-flex">
-                        <span className="input-group-text" id="basic-addon1">
-                            <i className="bi bi-search text-dark"></i>
-                        </span>
-                        <input
-                            className="form-control"
-                            type="search"
-                            placeholder="Check your query..."
-                            aria-label="Search"
-                        />
-                    </div>
 
                     {/* Notification Icon */}
                     <div className="text-white me-3">
