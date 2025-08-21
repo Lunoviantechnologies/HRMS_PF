@@ -22,6 +22,13 @@ export default function Employee_Navbar() {
   const handleLogout = () => {
     logout(navigate);
   };
+    const handleLeaveRequest = () => {
+        navigate('/employee_dashboard/leaveRequest');
+    };
+      const handleSalary = () => {
+        navigate('/employee_dashboard/salary');
+    };
+    
 
   const handleAttendence = () => {
     navigate("/employee_dashboard/attendence");

@@ -48,7 +48,7 @@ const EditEmployeeModel = ({ show, onHide, employee }) => {
         }
       }
 
-      const response = await axios.put(`${backendIP}/HRMS/employee/update/${employeeDetails.id}`, formDataToSend,
+      const response = await axios.put(`${backendIP}/HRMS/api/employees/update/${employeeDetails.id}`, formDataToSend,
         {
           headers: {
             Authorization: token,
@@ -57,9 +57,12 @@ const EditEmployeeModel = ({ show, onHide, employee }) => {
         }
       );
 
-      // console.log("Update response:", response.data);
+      console.log("Update response:", formDataToSend);
       alert("Employee details updated successfully");
       onHide();
+      // setEmployeeDetails(employeeDetails.map( emp =>{
+      //   emp.id === formDataToSend.id ? { ...emp, ...formDataToSend } : emp
+      // }));
     } catch (err) {
       // console.error("Error updating employee:", err);
       alert("Failed to update employee details");

@@ -1,367 +1,632 @@
-import React, { useState, useEffect } from "react";
-import { Card, Box, TextField, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import React, { useState } from "react";
+import { Card, Box, TextField, Button, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { styled } from "@mui/material/styles";
 import axios from "axios";
 import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
-const VisuallyHiddenInput = styled('input')({
-    clip: 'rect(0 0 0 0)',
-    clipPath: 'inset(50%)',
+const VisuallyHiddenInput = styled("input")({
+    clip: "rect(0 0 0 0)",
+    clipPath: "inset(50%)",
     height: 1,
-    overflow: 'hidden',
-    position: 'absolute',
+    overflow: "hidden",
+    position: "absolute",
     bottom: 0,
     left: 0,
-    whiteSpace: 'nowrap',
+    whiteSpace: "nowrap",
     width: 1,
 });
 
+// 🔹 Yup Schemas for each step
+const validationSchemas = [
+    // Step 0: Basic Details
+    Yup.object({
+        firstName: Yup.string().required("First name is required"),
+        lastName: Yup.string().required("Last name is required"),
+        emailId: Yup.string().email("Invalid email").required("Email is required"),
+        contactNumber1: Yup.string().matches(/^[0-9]{10}$/, "Must be 10 digits").min(10, "Must be at least 10 digits").required("Contact number is required"),
+    }),
+    // Step 1: Personal Details
+    Yup.object({
+        panNumber: Yup.string().required("PAN number is required"),
+        aadharNumber: Yup.string()
+            .matches(/^[0-9]{12}$/, "Must be 12 digits")
+            .required("Aadhar is required"),
+    }),
+    // Step 2: Family Details
+    Yup.object({
+        fatherName: Yup.string().required("Father's name is required"),
+        motherName: Yup.string().required("Mother's name is required"),
+    }),
+    // Step 3: Experience
+    Yup.object({
+        previousCompanyName: Yup.string().required("Company name required"),
+        department: Yup.string().required("Department required"),
+        designation: Yup.string().required("Designation required"),
+    }),
+    // Step 4: Education
+    Yup.object({
+        higherQualification: Yup.string().required("Qualification required"),
+    }),
+    // Step 5: Bank Details
+    Yup.object({
+        bankName: Yup.string().required("Bank name required"),
+        accountNo: Yup.string().required("Account number required"),
+        ifscCode: Yup.string().required("IFSC required"),
+    }),
+    // Step 6: Documents (optional → no validation)
+    Yup.object({}),
+    // Step 7: Salary
+    Yup.object({
+        basicEmployeeSalary: Yup.number()
+            .positive("Must be positive")
+            .required("Salary is required"),
+    }),
+    // Step 8: Credentials
+    Yup.object({
+        password: Yup.string()
+            .min(6, "At least 6 characters")
+            .required("Password is required"),
+    }),
+];
+
+// 🔹 Initial Values
+const initialValues = {
+    prefix: "",
+    firstName: "",
+    lastName: "",
+    emailId: "",
+    contactNumber1: "",
+    gender: "",
+    dateOfBirth: "",
+    nationality: "",
+    workEmail: "",
+    joiningDate: "",
+    houseNo: "",
+    city: "",
+    state: "",
+    panNumber: "",
+    aadharNumber: "",
+    passportNumber: "",
+    fatherName: "",
+    motherName: "",
+    maritalStatus: "",
+    previousCompanyName: "",
+    previousExperience: "",
+    department: "",
+    designation: "",
+    previousCtc: "",
+    higherQualification: "",
+    bankName: "",
+    accountNo: "",
+    ifscCode: "",
+    bankBranch: "",
+    basicEmployeeSalary: "",
+    password: "",
+    faceImages: [],
+    profilePhoto: null,
+    document1: null,
+    document2: null,
+    document3: null,
+};
+
 const AddEmployee = () => {
-    const {token} = useAuth();    
-    const [step, setStep] = useState(() => {
-        const savedStep = localStorage.getItem('currentStep');
-        return savedStep ? parseInt(savedStep, 10) : 0;
-    });
+    const { token } = useAuth();
+    const [step, setStep] = useState(0);
 
-    const [formData, setFormData] = useState({
-        prefix: '',
-        firstName: '',
-        lastName: '',
-        emailId: '',
-        contactNumber1: '',
-        gender: '',
-        dateOfBirth: '',
-        nationality: '',
-        workEmail: '',
-        joiningDate: '',
-        houseNo: '',
-        city: '',
-        state: '',
-        panNumber: '',
-        aadharNumber: '',
-        passportNumber: '',
-        fatherName: '',
-        motherName: '',
-        maritalStatus: '',
-        previousCompanyName: '',
-        previousExperience: '',
-        department: '',
-        designation: '',
-        previousCtc: '',
-        higherQualification: '',
-        bankName: '',
-        accountNo: '',
-        ifscCode: '',
-        bankBranch: '',
-        profilePhoto: '',
-        imageDir: '',
-        document1: '',
-        document2: '',
-        document3: '',
-        basicEmployeeSalary: 0,
-        password: ''
-    });
-
-    useEffect(() => {
-        localStorage.setItem('currentStep', step);
-    }, [step]);
-
-    const handleChange = (e) => {
-        const key = e.target.name || e.target.id;
-        setFormData(prev => ({ ...prev, [key]: e.target.value }));
-    };
-
-    const handleNext = () => {
-        if (validateStep(step)) {
-            setStep(prev => prev + 1);
+    const handleFileChange = (setFieldValue, field, multiple = false) => (e) => {
+        if (multiple) {
+            setFieldValue(field, Array.from(e.target.files));
         } else {
-            alert("Please fill in all required fields before proceeding.");
+            setFieldValue(field, e.target.files[0]);
         }
     };
 
-    const handleBack = () => setStep(prev => prev - 1);
+    const handleSubmitForm = async (values, { resetForm }) => {
+        try {
+            const formDataToSend = new FormData();
+            Object.keys(values).forEach((key) => {
+                if (
+                    !["faceImages", "profilePhoto", "document1", "document2", "document3"].includes(key)
+                ) {
+                    formDataToSend.append(key, values[key]);
+                }
+            });
 
-    const handleSubmit = () => {
-        console.log("Submitted Data:", formData);
-
-        const formDataToSend = new FormData();
-        for (const key in formData) {
-            if (formData[key]) {
-                formDataToSend.append(key, formData[key]);
+            if (values.faceImages?.length) {
+                values.faceImages.forEach((file) => formDataToSend.append("faceImages", file));
             }
-        };
+            if (values.profilePhoto) formDataToSend.append("profilePhoto", values.profilePhoto);
+            if (values.document1) formDataToSend.append("document1", values.document1);
+            if (values.document2) formDataToSend.append("document2", values.document2);
+            if (values.document3) formDataToSend.append("document3", values.document3);
 
-        setFormData({
-            prefix: '',
-            firstName: '',
-            lastName: '',
-            emailId: '',
-            contactNumber1: '',
-            gender: '',
-            dateOfBirth: '',
-            nationality: '',
-            workEmail: '',
-            joiningDate: '',
-            houseNo: '',
-            city: '',
-            state: '',
-            panNumber: '',
-            aadharNumber: '',
-            passportNumber: '',
-            fatherName: '',
-            motherName: '',
-            maritalStatus: '',
-            previousCompanyName: '',
-            previousExperience: '',
-            department: '',
-            designation: '',
-            previousCtc: '',
-            higherQualification: '',
-            bankName: '',
-            accountNo: '',
-            ifscCode: '',
-            bankBranch: '',
-            profilePhoto: '',
-            imageDir: '',
-            document1: '',
-            document2: '',
-            document3: '',
-            basicEmployeeSalary: 0,
-            password: ''
-        });
-        setStep(0);
-        localStorage.removeItem('currentStep');
+            const res = await axios.post(`${backendIP}/HRMS/api/employees/register`, formDataToSend, {
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
 
-        axios({
-            url: `${backendIP}/HRMS/api/employees/register`,
-            method: 'post',
-            headers: {
-                Authorization: token,
-                'Content-Type': 'multipart/form-data'
-            },
-            data: formDataToSend
-        }).then(res => {
-            console.log('employee data sent successfully', res.data);
-            alert("Employee data submitted successfully!");
-        }).catch(err => {
-            console.log('data not sent', err);
-            alert('Employee data not registered');
-        });
-    };
-
-    const validateStep = (step) => {
-        switch (step) {
-            case 0: // Basic Details
-                return formData.firstName && formData.lastName && formData.emailId && formData.contactNumber1;
-            case 1: // Personal Details
-                return formData.panNumber && formData.aadharNumber;
-            case 2: // Family Details
-                return formData.fatherName && formData.motherName;
-            case 3: // Experience Details
-                return formData.previousCompanyName && formData.department && formData.designation;
-            case 4: // Education
-                return formData.higherQualification;
-            case 5: // Bank Details
-                return formData.bankName && formData.accountNo && formData.ifscCode;
-            case 6: // Documents (optional to enforce)
-                return true;
-            case 7: // Salary
-                return formData.basicEmployeeSalary;
-            case 8: // Password
-                return formData.password;
-            default:
-                return false;
+            alert("Employee registered successfully!");
+            console.log("Response:", res.data);
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Failed to register employee.");
         }
-    };
 
+        resetForm();
+        setStep(0);
+    };
 
     return (
         <div>
             <h1 className="mb-4">Add Employee</h1>
 
-            {step === 0 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Basic Details</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <FormControl fullWidth>
-                            <InputLabel id="prefix-label">Prefix</InputLabel>
-                            <Select labelId="prefix-label" id="prefix" name="prefix" value={formData.prefix} label="Prefix" onChange={handleChange}>
-                                <MenuItem value={'mr.'}>Mr.</MenuItem>
-                                <MenuItem value={'mrs.'}>Mrs.</MenuItem>
-                                <MenuItem value={'miss.'}>Miss</MenuItem>
-                                <MenuItem value={'dr.'}>Dr</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <TextField id="firstName" label="First Name" value={formData.firstName} onChange={handleChange} required />
-                        <TextField id="lastName" label="Last Name" value={formData.lastName} onChange={handleChange} required />
-                        <TextField id="emailId" label="Email ID" value={formData.emailId} onChange={handleChange} required />
-                        <TextField id="contactNumber1" label="Contact Number" value={formData.contactNumber1} onChange={handleChange} required />
-                        <TextField id="gender" label="Gender" value={formData.gender} onChange={handleChange} />
-                        <TextField id="dateOfBirth" type="date" label="Date Of Birth" value={formData.dateOfBirth} onChange={handleChange} InputLabelProps={{ shrink: true }} />
-                        <TextField id="nationality" label="Nationality" value={formData.nationality} onChange={handleChange} />
-                        <TextField id="workEmail" label="Work Email ID" value={formData.workEmail} onChange={handleChange} />
-                        <TextField id="joiningDate" type="date" label="Joining Date" value={formData.joiningDate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
-                        <TextField id="houseNo" label="House Number" value={formData.houseNo} onChange={handleChange} />
-                        <TextField id="city" label="City" value={formData.city} onChange={handleChange} />
-                        <TextField id="state" label="State" value={formData.state} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+            <Formik
+                initialValues={initialValues}
+                validationSchema={validationSchemas[step]}
+                onSubmit={(values, { resetForm }) => handleSubmitForm(values, { resetForm })}
+            >
+                {({ setFieldValue, errors, touched }) => (
+                    <Form>
+                        {/* 🔹 Step 0 */}
+                        {step === 0 && (
+                            <Card sx={{ padding: "15px", boxShadow: 3 }}>
+                                <h5>Basic Details</h5>
+                                <Box sx={{ "& > :not(style)": { m: 1, width: "25ch" } }}>
+                                    <FormControl fullWidth>
+                                        <InputLabel id="prefix-label">Prefix</InputLabel>
+                                        <Field
+                                            as={Select}
+                                            labelId="prefix-label"
+                                            name="prefix"
+                                            label="Prefix"
+                                        >
+                                            <MenuItem value="mr.">Mr.</MenuItem>
+                                            <MenuItem value="mrs.">Mrs.</MenuItem>
+                                            <MenuItem value="miss.">Miss</MenuItem>
+                                            <MenuItem value="dr.">Dr</MenuItem>
+                                        </Field>
+                                    </FormControl>
 
-            {step === 1 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Personal Details</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="panNumber" label="Pan Number" value={formData.panNumber} onChange={handleChange} />
-                        <TextField id="aadharNumber" label="Aadhar Number" value={formData.aadharNumber} onChange={handleChange} />
-                        <TextField id="passportNumber" label="Passport Number" value={formData.passportNumber} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                                    <Field
+                                        as={TextField}
+                                        name="firstName"
+                                        label="First Name"
+                                        error={touched.firstName && Boolean(errors.firstName)}
+                                        helperText={<ErrorMessage name="firstName" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="lastName"
+                                        label="Last Name"
+                                        error={touched.lastName && Boolean(errors.lastName)}
+                                        helperText={<ErrorMessage name="lastName" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="emailId"
+                                        label="Email ID"
+                                        error={touched.emailId && Boolean(errors.emailId)}
+                                        helperText={<ErrorMessage name="emailId" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="contactNumber1"
+                                        label="Contact Number"
+                                        error={touched.contactNumber1 && Boolean(errors.contactNumber1)}
+                                        helperText={<ErrorMessage name="contactNumber1" />}
+                                    />
+                                    <FormControl fullWidth>
+                                        <InputLabel id="gender-label">Gender</InputLabel>
+                                        <Field
+                                            as={Select}
+                                            labelId="gender-label"
+                                            name="gender"
+                                            label="Gender"
+                                            error={touched.gender && Boolean(errors.gender)}
+                                            helperText={<ErrorMessage name="gender" />}
+                                        >
+                                            <MenuItem value="Male">Male</MenuItem>
+                                            <MenuItem value="Female">Female</MenuItem>
+                                            <MenuItem value="Other">Other</MenuItem>
+                                        </Field>
+                                    </FormControl>
+                                    <Field
+                                        as={TextField}
+                                        type="date"
+                                        name="dateOfBirth"
+                                        label="Date Of Birth"
+                                        InputLabelProps={{ shrink: true }}
+                                        error={touched.dateOfBirth && Boolean(errors.dateOfBirth)}
+                                        helperText={<ErrorMessage name="dateOfBirth" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="nationality"
+                                        label="Nationality"
+                                        error={touched.nationality && Boolean(errors.nationality)}
+                                        helperText={<ErrorMessage name="nationality" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="workEmail"
+                                        label="Work Email"
+                                        error={touched.workEmail && Boolean(errors.workEmail)}
+                                        helperText={<ErrorMessage name="workEmail" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        type="date"
+                                        name="joiningDate"
+                                        label="Joining Date"
+                                        InputLabelProps={{ shrink: true }}
+                                        error={touched.joiningDate && Boolean(errors.joiningDate)}
+                                        helperText={<ErrorMessage name="joiningDate" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="houseNo"
+                                        label="House Number"
+                                        error={touched.houseNo && Boolean(errors.houseNo)}
+                                        helperText={<ErrorMessage name="houseNo" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="city"
+                                        label="City"
+                                        error={touched.city && Boolean(errors.city)}
+                                        helperText={<ErrorMessage name="city" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="state"
+                                        label="State"
+                                        error={touched.state && Boolean(errors.state)}
+                                        helperText={<ErrorMessage name="state" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
 
-            {step === 2 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Family Details</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="fatherName" label="Father's Name" value={formData.fatherName} onChange={handleChange} />
-                        <TextField id="motherName" label="Mother's Name" value={formData.motherName} onChange={handleChange} />
-                        <TextField id="maritalStatus" label="Marital Status" value={formData.maritalStatus} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                        {/* 🔹 Step 1 */}
+                        {step === 1 && (
+                            <Card sx={{ padding: "15px", boxShadow: 3 }}>
+                                <h5>Personal Details</h5>
+                                <Box sx={{ "& > :not(style)": { m: 1, width: "25ch" } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="panNumber"
+                                        label="PAN Number"
+                                        error={touched.panNumber && Boolean(errors.panNumber)}
+                                        helperText={<ErrorMessage name="panNumber" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="aadharNumber"
+                                        label="Aadhar Number"
+                                        error={touched.aadharNumber && Boolean(errors.aadharNumber)}
+                                        helperText={<ErrorMessage name="aadharNumber" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="passportNumber"
+                                        label="Passport Number"
+                                        error={touched.passportNumber && Boolean(errors.passportNumber)}
+                                        helperText={<ErrorMessage name="passportNumber" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
 
-            {step === 3 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Experience Details</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="previousCompanyName" label="Previous Company Name" value={formData.previousCompanyName} onChange={handleChange} />
-                        <TextField id="previousExperience" label="Years of Experience" value={formData.previousExperience} onChange={handleChange} />
-                        <TextField id="department" label="Department" value={formData.department} onChange={handleChange} />
-                        <TextField id="designation" label="Designation" value={formData.designation} onChange={handleChange} />
-                        <TextField id="previousCtc" label="Previous Ctc" value={formData.previousCtc} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                        {/* 🔹 Step 2 */}
+                        {step === 2 && (
+                            <Card sx={{ padding: "15px", boxShadow: 3 }}>
+                                <h5>Family Details</h5>
+                                <Box sx={{ "& > :not(style)": { m: 1, width: "25ch" } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="fatherName"
+                                        label="Father's Name"
+                                        error={touched.fatherName && Boolean(errors.fatherName)}
+                                        helperText={<ErrorMessage name="fatherName" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="motherName"
+                                        label="Mother's Name"
+                                        error={touched.motherName && Boolean(errors.motherName)}
+                                        helperText={<ErrorMessage name="motherName" />}
+                                    />
+                                    <FormControl fullWidth>
+                                        <InputLabel id="maritalStatus-label">Marital Status</InputLabel>
+                                        <Field
+                                            as={Select}
+                                            labelId="maritalStatus-label"
+                                            name="maritalStatus"
+                                            label="Marital Status"
+                                            error={touched.maritalStatus && Boolean(errors.maritalStatus)}
+                                            helperText={<ErrorMessage name="maritalStatus" />}
+                                        >
+                                            <MenuItem value="Single">Single</MenuItem>
+                                            <MenuItem value="Married">Married</MenuItem>
+                                            <MenuItem value="Divorced">Divorced</MenuItem>
+                                            <MenuItem value="Widowed">Widowed</MenuItem>
+                                        </Field>
+                                    </FormControl>
+                                </Box>
+                            </Card>
+                        )}
 
-            {step === 4 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Education</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="higherQualification" label="Higher Qualification" value={formData.higherQualification} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                        {step === 3 && (
+                            <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                                <h5>Experience Details</h5>
+                                <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="previousCompanyName"
+                                        label="Previous Company Name"
+                                        error={touched.previousCompanyName && Boolean(errors.previousCompanyName)}
+                                        helperText={<ErrorMessage name="previousCompanyName" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="previousExperience"
+                                        label="Previous Experience"
+                                        error={touched.previousExperience && Boolean(errors.previousExperience)}
+                                        helperText={<ErrorMessage name="previousExperience" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="department"
+                                        label="Department"
+                                        error={touched.department && Boolean(errors.department)}
+                                        helperText={<ErrorMessage name="department" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="designation"
+                                        label="Designation"
+                                        error={touched.designation && Boolean(errors.designation)}
+                                        helperText={<ErrorMessage name="designation" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="previousCtc"
+                                        label="Previous Ctc"
+                                        error={touched.previousCtc && Boolean(errors.previousCtc)}
+                                        helperText={<ErrorMessage name="previousCtc" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
 
-            {step === 5 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Bank Details</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="bankName" label="Bank Name" value={formData.bankName} onChange={handleChange} />
-                        <TextField id="accountNo" label="Account Number" value={formData.accountNo} onChange={handleChange} />
-                        <TextField id="ifscCode" label="IFSC Code" value={formData.ifscCode} onChange={handleChange} />
-                        <TextField id="bankBranch" label="Branch Name" value={formData.bankBranch} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                        {step === 4 && (
+                            <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                                <h5>Education</h5>
+                                <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="higherQualification"
+                                        label="Higher Qualification"
+                                        error={touched.higherQualification && Boolean(errors.higherQualification)}
+                                        helperText={<ErrorMessage name="higherQualification" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
 
-            {step === 6 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Documents</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <Button component="label" id="profilePhoto" variant="contained" startIcon={<CloudUploadIcon />}>
-                            Upload Profile Photo
-                            <VisuallyHiddenInput type="file" accept="image/*" onChange={(event) => {
-                                const file = event.target.files[0];
-                                if (file) {
-                                    setFormData(prev => ({ ...prev, profilePhoto: file }));
-                                }
-                            }}
-                            />
-                        </Button>
+                        {step === 5 && (
+                            <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                                <h5>Bank Details</h5>
+                                <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="bankName"
+                                        label="Bank Name"
+                                        error={touched.bankName && Boolean(errors.bankName)}
+                                        helperText={<ErrorMessage name="bankName" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="accountNo"
+                                        label="Account Number"
+                                        error={touched.accountNo && Boolean(errors.accountNo)}
+                                        helperText={<ErrorMessage name="accountNo" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="ifscCode"
+                                        label="ifsc Code"
+                                        error={touched.ifscCode && Boolean(errors.ifscCode)}
+                                        helperText={<ErrorMessage name="ifscCode" />}
+                                    />
+                                    <Field
+                                        as={TextField}
+                                        name="bankBranch"
+                                        label="Bank Branch"
+                                        error={touched.bankBranch && Boolean(errors.bankBranch)}
+                                        helperText={<ErrorMessage name="bankBranch" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
 
-                        <Button component="label" id="imageDir" variant="contained" startIcon={<CloudUploadIcon />}>
-                            imageDir
-                            <VisuallyHiddenInput type="file" accept="image/*" onChange={(event) => {
-                                const file = event.target.files[0];
-                                if (file) {
-                                    setFormData(prev => ({ ...prev, imageDir: file }));
-                                }
-                            }}
-                            />
-                        </Button>
+                        {step === 6 && (
+                            <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                                <h5>Documents</h5>
+                                <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
 
-                        <Button component="label" id="document1" variant="contained" startIcon={<CloudUploadIcon />}>
-                            Upload Document 1
-                            <VisuallyHiddenInput type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => {
-                                const file = event.target.files[0];
-                                if (file) {
-                                    setFormData(prev => ({ ...prev, document1: file }));
-                                }
-                            }}
-                            />
-                        </Button>
+                                    {/* Profile Photo */}
+                                    <Button
+                                        component="label"
+                                        variant="contained"
+                                        startIcon={<CloudUploadIcon />}
+                                    >
+                                        Upload Profile Photo
+                                        <VisuallyHiddenInput
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(event) => {
+                                                const file = event.currentTarget.files[0];
+                                                if (file) {
+                                                    setFieldValue("profilePhoto", file);
+                                                }
+                                            }}
+                                        />
+                                    </Button>
+                                    {touched.profilePhoto && errors.profilePhoto && (
+                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.profilePhoto}</div>
+                                    )}
 
-                        <Button component="label" id="document2" variant="contained" startIcon={<CloudUploadIcon />}>
-                            Upload Document 2
-                            <VisuallyHiddenInput type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => {
-                                const file = event.target.files[0];
-                                if (file) {
-                                    setFormData(prev => ({ ...prev, document2: file }));
-                                }
-                            }}
-                            />
-                        </Button>
+                                    {/* Face Images */}
+                                    <Button
+                                        component="label"
+                                        variant="contained"
+                                        startIcon={<CloudUploadIcon />}
+                                    >
+                                        Upload Face Images
+                                        <VisuallyHiddenInput
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={(event) => {
+                                                const files = Array.from(event.currentTarget.files);
+                                                setFieldValue("faceImages", files);
+                                            }}
+                                        />
+                                    </Button>
+                                    {touched.faceImages && errors.faceImages && (
+                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.faceImages}</div>
+                                    )}
 
-                        <Button component="label" id="document3" variant="contained" startIcon={<CloudUploadIcon />}>
-                            Upload Document 3
-                            <VisuallyHiddenInput type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => {
-                                const file = event.target.files[0];
-                                if (file) {
-                                    setFormData(prev => ({ ...prev, document3: file }));
-                                }
-                            }}
-                            />
-                        </Button>
-                    </Box>
-                </Card>
-            )}
+                                    {/* Document 1 */}
+                                    <Button
+                                        component="label"
+                                        variant="contained"
+                                        startIcon={<CloudUploadIcon />}
+                                    >
+                                        Upload Document 1
+                                        <VisuallyHiddenInput
+                                            type="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={(event) => {
+                                                const file = event.currentTarget.files[0];
+                                                if (file) {
+                                                    setFieldValue("document1", file);
+                                                }
+                                            }}
+                                        />
+                                    </Button>
+                                    {touched.document1 && errors.document1 && (
+                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.document1}</div>
+                                    )}
 
-            {step === 7 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Basic Salary</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="basicEmployeeSalary" label="Salary" value={formData.basicEmployeeSalary} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                                    {/* Document 2 */}
+                                    <Button
+                                        component="label"
+                                        variant="contained"
+                                        startIcon={<CloudUploadIcon />}
+                                    >
+                                        Upload Document 2
+                                        <VisuallyHiddenInput
+                                            type="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={(event) => {
+                                                const file = event.currentTarget.files[0];
+                                                if (file) {
+                                                    setFieldValue("document2", file);
+                                                }
+                                            }}
+                                        />
+                                    </Button>
 
-            {step === 8 && (
-                <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                    <h5>Credentials</h5>
-                    <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
-                        <TextField id="password" label="Password" value={formData.password} onChange={handleChange} />
-                    </Box>
-                </Card>
-            )}
+                                    {/* Document 3 */}
+                                    <Button
+                                        component="label"
+                                        variant="contained"
+                                        startIcon={<CloudUploadIcon />}
+                                    >
+                                        Upload Document 3
+                                        <VisuallyHiddenInput
+                                            type="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={(event) => {
+                                                const file = event.currentTarget.files[0];
+                                                if (file) {
+                                                    setFieldValue("document3", file);
+                                                }
+                                            }}
+                                        />
+                                    </Button>
+                                </Box>
+                            </Card>
+                        )}
 
-            <Box sx={{ mt: 2 }}>
-                <div className="d-flex justify-content-around">
-                    <Button variant="contained" onClick={handleBack} disabled={step === 0} sx={{ px: 5 }}>
-                        Back
-                    </Button>
-                    {step < 8 ? (
-                        <Button variant="contained" onClick={handleNext} sx={{ px: 5 }}>Next</Button>
-                    ) : (
-                        <Button variant="contained" onClick={handleSubmit} sx={{ px: 5 }}>Submit</Button>
-                    )}
-                </div>
-            </Box>
+                        {step === 7 && (
+                            <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                                <h5>Basic Salary</h5>
+                                <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="basicEmployeeSalary"
+                                        label="Employee Salary"
+                                        error={touched.basicEmployeeSalary && Boolean(errors.basicEmployeeSalary)}
+                                        helperText={<ErrorMessage name="basicEmployeeSalary" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
+
+                        {step === 8 && (
+                            <Card sx={{ padding: '15px', boxShadow: 3 }}>
+                                <h5>Credentials</h5>
+                                <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
+                                    <Field
+                                        as={TextField}
+                                        name="password"
+                                        label="Password"
+                                        error={touched.password && Boolean(errors.password)}
+                                        helperText={<ErrorMessage name="password" />}
+                                    />
+                                </Box>
+                            </Card>
+                        )}
+
+                        {/* 🔹 Navigation Buttons */}
+                        <Box sx={{ mt: 2 }} className="d-flex justify-content-around">
+                            <Button
+                                variant="contained"
+                                type="button"
+                                onClick={() => setStep((s) => s - 1)}
+                                disabled={step === 0}
+                            >
+                                Back
+                            </Button>
+
+                            {step < validationSchemas.length - 1 ? (
+                                <Button
+                                    variant="contained"
+                                    type="button"
+                                    onClick={() => setStep((s) => s + 1)}
+                                >
+                                    Next
+                                </Button>
+                            ) : (
+                                <Button variant="contained" type="submit">
+                                    Submit
+                                </Button>
+                            )}
+                        </Box>
+                    </Form>
+                )}
+            </Formik>
         </div>
     );
 };
 
 export default AddEmployee;
-
-

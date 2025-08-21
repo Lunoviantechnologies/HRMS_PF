@@ -16,7 +16,13 @@ export default function LeaveRequest() {
   useEffect(() => {
     const fetchLeaveRequests = async () => {
       try {
-        const res = await axios.get(`${backendIP}/HRMS/api/leaves`);
+        const res = await axios.get(`${backendIP}/HRMS/api/leaves`, {
+          headers: {
+            Authorization: token
+          }
+        });
+        console.log(res.data);
+
         setLeaveRequests(res.data);
         setFilteredRequests(res.data); // initially show all
       } catch (err) {
@@ -89,7 +95,7 @@ export default function LeaveRequest() {
         <thead className="table-primary text-center">
           <tr>
             <th>Thumbnail</th>
-            <th>Name</th>
+            <th>Mail</th>
             <th>Leave Type</th>
             <th>Start</th>
             <th>End</th>
@@ -109,20 +115,20 @@ export default function LeaveRequest() {
                       alignItems: "center", fontSize: 14
                     }}
                     >
-                      {(req.employeeName?.[0] || "-").toUpperCase()}
+                      {(req.employeeEmail?.[0] || "-").toUpperCase()}
                     </div>
                   </td>
-                  <td>{req.employeeName}</td>
-                  <td>{req.reason}</td>
+                  <td>{req.employeeEmail}</td>
+                  <td>{req.leaveType}</td>
                   <td>{req.startDate}</td>
                   <td>{req.endDate}</td>
                   <td>
                     <span
                       className={`badge ${status === "accepted"
-                          ? "bg-success"
-                          : status === "rejected"
-                            ? "bg-danger"
-                            : "bg-warning text-dark"
+                        ? "bg-success"
+                        : status === "rejected"
+                          ? "bg-danger"
+                          : "bg-warning text-dark"
                         }`}
                     >
                       {req.status}

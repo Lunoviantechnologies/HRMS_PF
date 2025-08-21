@@ -11,8 +11,7 @@ const Employee_LeaveRequest = () => {
         leaveType: "",
         startDate: "",
         endDate: "",
-        reason: "",
-        status: "PENDING",
+        reason: ""
     });
 
     const [successMsg, setSuccessMsg] = useState("");
@@ -27,24 +26,24 @@ const Employee_LeaveRequest = () => {
         console.log(formData);
 
         try {
-            const response = await axios.post(`${backendIP}/api/leaves/apply-leave/${user.id}`, formData, {
+            const response = await axios.post(`${backendIP}/HRMS/api/leaves/apply-leave/${user.id}`, formData, {
                 headers : {
                     Authorization : token,
                     "Content-Type": "application/json"
                 }
             });
+            alert("Leave request submitted successfully!")
             setSuccessMsg("Leave request submitted successfully!");
             setErrorMsg("");
             console.log("Submitted:", response.data);
 
             // Clear form
             setFormData({
-                employeeId: `${user?.id}`,
+                employeeEmail: `${user?.id}`,
                 leaveType: "",
                 startDate: "",
                 endDate: "",
-                reason: "",
-                status: "PENDING",
+                reason: ""
             });
         } catch (error) {
             setErrorMsg("Failed to submit leave request.");
@@ -70,8 +69,10 @@ const Employee_LeaveRequest = () => {
                     <Select name="leaveType" value={formData.leaveType} onChange={handleChange} required>
                         <MenuItem value="Sick Leave">Sick Leave</MenuItem>
                         <MenuItem value="Casual Leave">Casual Leave</MenuItem>
-                        <MenuItem value="Paid Leave">Paid Leave</MenuItem>
+                        <MenuItem value="Earned Leave">Earned Leave</MenuItem>
                         <MenuItem value="Unpaid Leave">Unpaid Leave</MenuItem>
+                        <MenuItem value="Compensatory Leave">Compensatory Off</MenuItem>
+                        <MenuItem value="Maternity/Paternity Leave">Maternity/Paternity Leave</MenuItem>
                     </Select>
                 </FormControl>
                 <TextField

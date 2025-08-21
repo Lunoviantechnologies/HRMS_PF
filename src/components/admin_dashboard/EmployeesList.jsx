@@ -12,11 +12,10 @@ const EmployeesList = () => {
     const { token } = useAuth();
     const navigate = useNavigate();
     const [allEmployeesList, setAllEmployeesList] = useState(null);
-    console.log(allEmployeesList);
-
     const [selectedEmp, setSelectedEmp] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [filterEmployee, setFilterEmployee] = useState();
 
     const handleView = (employee) => {
         setSelectedEmp(employee);
@@ -30,7 +29,7 @@ const EmployeesList = () => {
                 Authorization: token
             }
         }).then(res => {
-            // console.log(res.data);
+            console.log(res.data);
             setAllEmployeesList(res.data);
         }).catch(err => console.log(err));
     }, [token]);
@@ -47,7 +46,7 @@ const EmployeesList = () => {
         const confirmDelete = window.confirm(`Are you sure you want to delete ${employee.firstName}?`);
         if (!confirmDelete) return;
 
-        axios.delete(`${backendIP}/HRMS/employee/delete-employee/${employee.id}`, {
+        axios.delete(`${backendIP}/HRMS/api/employees/delete/${employee.id}`, {
             headers: {
                 Authorization: token
             }
@@ -71,6 +70,19 @@ const EmployeesList = () => {
         <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5><strong>All Employees</strong></h5>
+                {/* Search Bar */}
+                <div className="input-group me-3 d-none d-sm-flex w-25">
+                    <span className="input-group-text" id="basic-addon1">
+                        <i className="bi bi-search text-dark"></i>
+                    </span>
+                    <input
+                        className="form-control p-2"
+                        type="search"
+                        placeholder="Check your query..."
+                        aria-label="Search"
+                        onChange={(e) => setFilterEmployee(e.target.value)}
+                    />
+                </div>
                 <Button variant="primary" onClick={handleAddEmployee}>Add New Employee</Button>
             </div>
 
@@ -88,31 +100,75 @@ const EmployeesList = () => {
                 <tbody className="text-center">
                     {
                         allEmployeesList ? (
-                            allEmployeesList.map((employees) => {
-                                return (
-                                    <tr key={employees.id}>
-                                        <td>
-                                            {
-                                                employees.profilePhoto ? <img className="rounded-circle" width={'40px'} height={'40px'} src={`data:image/jpeg;base64,${employees.profilePhoto}`} alt="Profile photo" />
-                                                    : (
-                                                        <div className="rounded-circle bg-light d-inline-block" style={{ width: '40px', height: '40px', lineHeight: '40px' }}>
-                                                            {(employees.firstName?.[0] || '-').toUpperCase() + (employees.lastName?.[0] || '-').toUpperCase()}
-                                                        </div>
-                                                    )
-                                            }
-                                        </td>
-                                        <td>{employees.firstName}</td>
-                                        <td>{employees.lastName}</td>
-                                        <td>{employees.contactNumber1}</td>
-                                        <td className="text-danger"><b>{employees.workEmail}</b></td>
-                                        <td>
-                                            <Button variant="btn btn-outline-primary mx-1" title="View Employee" onClick={() => handleView(employees)}><i className="bi bi-eye"></i></Button>
-                                            <Button variant="btn btn-outline-success mx-1" title="Edit Employee" onClick={() => handleUpdate(employees)}><i className="bi bi-pencil"></i></Button>
-                                            <Button variant="btn btn-outline-danger mx-1" title="Delete Employee" onClick={() => handleDelete(employees)}><i className="bi bi-trash3-fill"></i></Button>
-                                        </td>
-                                    </tr>
-                                )
-                            })
+                            allEmployeesList
+                                .filter((emp) => {
+                                    if (!filterEmployee) return true; // no filter, show all
+                                    const search = filterEmployee.toLowerCase();
+                                    return (
+                                        emp.firstName?.toLowerCase().includes(search) ||
+                                        emp.lastName?.toLowerCase().includes(search) ||
+                                        emp.workEmail?.toLowerCase().includes(search) ||
+                                        emp.contactNumber1?.toLowerCase().includes(search)
+                                    );
+                                })
+                                .map((employees) => {
+                                    return (
+                                        <tr key={employees.id}>
+                                            <td>
+                                                {employees.profilePhoto ? (
+                                                    <img
+                                                        className="rounded-circle"
+                                                        width={"40px"}
+                                                        height={"40px"}
+                                                        src={`data:image/jpeg;base64,${employees.profilePhoto}`}
+                                                        alt="Profile"
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        className="rounded-circle bg-light d-inline-block"
+                                                        style={{
+                                                            width: "40px",
+                                                            height: "40px",
+                                                            lineHeight: "40px",
+                                                        }}
+                                                    >
+                                                        {(employees.firstName?.[0] || "-").toUpperCase() +
+                                                            (employees.lastName?.[0] || "-").toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>{employees.firstName}</td>
+                                            <td>{employees.lastName}</td>
+                                            <td>{employees.contactNumber1}</td>
+                                            <td className="text-danger">
+                                                <b>{employees.workEmail}</b>
+                                            </td>
+                                            <td>
+                                                <Button
+                                                    variant="btn btn-outline-primary mx-1"
+                                                    title="View Employee"
+                                                    onClick={() => handleView(employees)}
+                                                >
+                                                    <i className="bi bi-eye"></i>
+                                                </Button>
+                                                <Button
+                                                    variant="btn btn-outline-success mx-1"
+                                                    title="Edit Employee"
+                                                    onClick={() => handleUpdate(employees)}
+                                                >
+                                                    <i className="bi bi-pencil"></i>
+                                                </Button>
+                                                <Button
+                                                    variant="btn btn-outline-danger mx-1"
+                                                    title="Delete Employee"
+                                                    onClick={() => handleDelete(employees)}
+                                                >
+                                                    <i className="bi bi-trash3-fill"></i>
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                         ) : (
                             <tr>
                                 <td colSpan="6">
