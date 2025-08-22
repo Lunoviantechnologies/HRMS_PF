@@ -34,14 +34,6 @@ export default function Employee_Navbar() {
     navigate("/employee_dashboard/attendence");
   };
 
-  const handleLeaveRequest = () => {
-    navigate("/employee_dashboard/leaveRequest");
-  };
-
-  const handleSalary = () => {
-    navigate("/employee_dashboard/salary");
-  };
-
   const handleNotificationClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
