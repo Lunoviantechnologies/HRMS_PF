@@ -21,6 +21,7 @@ import Admin_Settings from './components/admin_dashboard/admin_account/Admin_Set
 import Profile from './components/employee_dashboard/Profile.jsx';
 import Settings from './components/employee_dashboard/Settings.jsx';
 import SalaryDetails from './components/employee_dashboard/SalaryDetails.jsx';
+import EditAdminProfile from './components/admin_dashboard/admin_account/EditAdminProfile.jsx';
 
 const router = createBrowserRouter([
     {
@@ -70,6 +71,10 @@ const router = createBrowserRouter([
             {
                 path: 'settings_admin',
                 element: <Admin_Settings />
+            },
+            {
+                path: 'editProfile_admin',
+                element: <EditAdminProfile />
             }
         ]
     },
