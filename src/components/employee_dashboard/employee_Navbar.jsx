@@ -110,9 +110,9 @@ export default function Employee_Navbar() {
                     fontSize: "14px",
                   }}
                 >
-                  {user?.id?.[0]?.toUpperCase()}
+                  {user?.sub?.[0]?.toUpperCase()}
                 </span>
-                <span>{user?.id}</span>
+                <span>{user?.sub}</span>
               </button>
               <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                 <li>

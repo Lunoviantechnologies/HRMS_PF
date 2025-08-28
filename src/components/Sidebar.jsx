@@ -60,19 +60,28 @@ const Sidebar = () => {
     >
       <ul className="list-group list-group-flush" style={{ paddingBottom: "100px" }}>
         {collapsibleSection(
+          "dashboardMgmt",
+          "bi-people",
+          "Dashboard",
+          <>
+            {navItem("View", "/dashboard")}
+          </>
+        )}
+
+        {collapsibleSection(
           "employeeMgmt",
           "bi-people",
-          "Employee Management",
+          "Employees",
           <>
             {navItem("Add Employee", "/dashboard/addEmployee")}
-            {navItem("All Employees", "/dashboard/allEmployees")}
+            {navItem("Employees List", "/dashboard/allEmployees")}
           </>
         )}
 
         {collapsibleSection(
           "attendanceMgmt",
           "bi-calendar-check",
-          "Attendance Management",
+          "Attendance",
           <>
             {navItem("Attendance Dashboard", "/dashboard/attendence")}
             {navItem("Mark Attendance", "/dashboard/markAttendance")}
@@ -84,7 +93,7 @@ const Sidebar = () => {
         {collapsibleSection(
           "leaveMgmt",
           "bi-envelope-open",
-          "Leave Management",
+          "Leave",
           <>
             {navItem("Leave Requests", "/dashboard/leaveRequest")}
             {navItem("Leave Policy", "/dashboard/leavePolicy")}
@@ -94,7 +103,7 @@ const Sidebar = () => {
         {collapsibleSection(
           "payrollMgmt",
           "bi-cash-stack",
-          "Payroll Management",
+          "Payroll",
           <>
             {navItem("Salary Dashboard", "/dashboard/salaryDashboard")}
             {navItem("Employee Salaries", "/dashboard/employeeSalary")}

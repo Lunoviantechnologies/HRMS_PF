@@ -7,7 +7,7 @@ import backendIP from "../../api";
 const Employee_LeaveRequest = () => {
     const { user, token } = useAuth();
     const [formData, setFormData] = useState({
-        employeeEmail: `${user?.id}`,
+        employeeEmail: `${user?.sub}`,
         leaveType: "",
         startDate: "",
         endDate: "",
@@ -23,10 +23,11 @@ const Employee_LeaveRequest = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // console.log(formData);
+        console.log(user);
 
         try {
-            const response = await axios.post(`${backendIP}/HRMS/api/leaves/apply-leave/${user.id}`, formData, {
+
+            const response = await axios.post(`${backendIP}/HRMS/api/leaves/apply-leave/${user.sub}`, formData, {
                 headers : {
                     Authorization : token,
                     "Content-Type": "application/json"
@@ -39,7 +40,7 @@ const Employee_LeaveRequest = () => {
 
             // Clear form
             setFormData({
-                employeeEmail: `${user?.id}`,
+                employeeEmail: `${user?.sub}`,
                 leaveType: "",
                 startDate: "",
                 endDate: "",

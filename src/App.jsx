@@ -10,7 +10,7 @@ function App() {
     <div className="d-flex flex-column" style={{ height: '100vh', overflow: 'hidden' }}>
       <Navbar />
 
-      <div className="d-flex flex-grow-1" style={{ overflow: 'hidden' }}>
+      <div className="d-flex flex-grow-1" style={{ overflow: 'hidden', backgroundColor: "rgb(2,2,95)" }}>
         <Sidebar />
 
         <main className="flex-grow-1 p-4 overflow-auto" style={{ maxHeight: 'calc(100vh - 56px)', backgroundColor: 'rgb(226, 239, 248)' }}>

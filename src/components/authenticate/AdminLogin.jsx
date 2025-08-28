@@ -138,11 +138,11 @@ const AdminLogin = () => {
                                     </button>
                                 </div>
 
-                                <hr />
+                                {/* <hr />
 
                                 <div className="text-center">
                                     <Link to={'/signUp'} className="small text-decoration-none">Need an account? Please SignUp!</Link>
-                                </div>
+                                </div> */}
                             </form>
 
                         </div>
