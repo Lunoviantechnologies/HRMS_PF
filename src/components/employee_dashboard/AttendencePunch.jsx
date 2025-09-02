@@ -7,13 +7,11 @@ import { useAuth } from "../../context/AuthContext";
 const AttendancePunch = () => {
   const { token, user } = useAuth();
   const webcamRef = useRef(null);
-  const { token } = useAuth();
-
   const [capturedImage, setCapturedImage] = useState(null);
   const [location, setLocation] = useState("");
   const [message, setMessage] = useState("");
 
-  // console.log(user)
+  console.log(user)
   // ✅ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
