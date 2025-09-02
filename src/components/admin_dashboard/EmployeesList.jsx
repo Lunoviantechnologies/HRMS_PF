@@ -19,7 +19,7 @@ const EmployeesList = () => {
 
     const handleView = (employee) => {
         setSelectedEmp(employee);
-        // console.log(employee.id);
+        // console.log(employee.id); 
         setShowViewModal(true);
     };
 
