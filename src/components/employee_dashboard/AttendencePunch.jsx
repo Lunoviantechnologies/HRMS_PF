@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import backendIP from "../../api"; // ✅ your backend base URL
@@ -8,34 +8,55 @@ const AttendancePunch = () => {
   const { token, user } = useAuth();    
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
-  const [location, setLocation] = useState("");
   const [message, setMessage] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [location, setLocation] = useState("");
 
-  console.log(user)
+  // console.log(user)
   // ✅ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Get location from backend (proxy to avoid CORS)
+  // ✅ Fetch User Location (Address instead of lat/lon)
   const fetchLocation = () => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const { latitude, longitude } = position.coords;
+      navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
-          const res = await axios.get(
-            `${backendIP}/HRMS/api/location/reverse?lat=${latitude}&lon=${longitude}`
+          const { latitude, longitude } = pos.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           );
-          setLocation(res.data.display_name || `${latitude}, ${longitude}`);
+          const data = await response.json();
+          setLocation(data.display_name || "Location not found");
         } catch (err) {
-          console.error("Location fetch error:", err);
-          setLocation(`${latitude}, ${longitude}`);
+          setLocation("Unable to fetch location");
         }
       });
-    } else {
-      setLocation("Geolocation not supported");
     }
+  };
+
+  useEffect(() => {
+    fetchLocation();
+  }, []);
+
+  // ✅ Capture Image from Webcam
+  const capture = () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setCapturedImage(imageSrc);
+  };
+
+  // ✅ Convert base64 → File (needed for multipart/form-data)
+  const dataURLtoFile = (dataUrl, filename) => {
+    let arr = dataUrl.split(","), mime = arr[0].match(/:(.*?);/)[1];
+    let bstr = atob(arr[1]);
+    let n = bstr.length;
+    let u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
   };
 
   // ✅ Send Captured Face to Backend
@@ -50,8 +71,8 @@ const AttendancePunch = () => {
 
       const formData = new FormData();
       formData.append("photo", file);
-      formData.append("email", user.sub);  // ✅ required by backend
-      formData.append("location", location);         // ✅ optional
+      formData.append("email", user.sub);  
+      formData.append("location", location);
 
       console.log([...formData.values()])
 
@@ -61,7 +82,7 @@ const AttendancePunch = () => {
         {
           headers: {
             // Authorization: token,  // already has Bearer
-            // "Content-Type": "multipart/form-data" 
+            //"Content-Type": "multipart/form-data/json" 
           }
         }
       );
@@ -77,27 +98,41 @@ const AttendancePunch = () => {
 
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <h2>Attendance Punch</h2>
+    <div style={{ textAlign: "center", padding: "20px" }}>
+      <h2>📌 Attendance Punch</h2>
+      <h3>{currentTime.toLocaleTimeString()}</h3>
 
-      <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" width={300} />
-
+      <Webcam
+        audio={false}
+        ref={webcamRef}
+        screenshotFormat="image/jpeg"
+        width={320}
+        height={240}
+      />
       <br />
-      <button onClick={capture}>📸 Capture</button>
-      <button onClick={fetchLocation}>📍 Get Location</button>
-      <button onClick={handleSubmit}>✅ Submit Attendance</button>
+
+      <button onClick={capture} style={{ margin: "10px", padding: "10px" }}>
+        📸 Capture
+      </button>
+      <button
+        onClick={sendToBackend}
+        disabled={!capturedImage}
+        style={{ margin: "10px", padding: "10px" }}
+      >
+        🚀 Punch In
+      </button>
 
       {capturedImage && (
         <div>
-          <h4>Preview:</h4>
-          <img src={capturedImage} alt="Captured" width={200} />
+          <h4>Preview</h4>
+          <img src={capturedImage} alt="captured" width={220} />
         </div>
       )}
 
-      {location && <p><b>Location:</b> {location}</p>}
-      {message && <p><b>Status:</b> {message}</p>}
+      <p>📍 {location}</p>
+      <p>{message}</p>
     </div>
   );
 };
 
-export default AttendancePunch;
+export default AttendancePunch; 
