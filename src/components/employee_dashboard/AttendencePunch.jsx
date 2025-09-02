@@ -5,7 +5,7 @@ import backendIP from "../../api"; // ✅ your backend base URL
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
-  const { token, user } = useAuth();  
+  const { token, user } = useAuth();    
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [location, setLocation] = useState("");
