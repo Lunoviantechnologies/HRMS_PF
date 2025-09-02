@@ -2,14 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import backendIP from "../../api"; // ✅ your backend base URL
+import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
+  const { token, user } = useAuth();
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [message, setMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [location, setLocation] = useState("");
 
+  // console.log(user)
   // ✅ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -57,32 +60,41 @@ const AttendancePunch = () => {
   };
 
   // ✅ Send Captured Face to Backend
-  // ✅ Send Captured Face to Backend
-const sendToBackend = async () => {
-  if (!capturedImage) {
-    setMessage("⚠️ Please capture your face first.");
-    return;
-  }
+  const sendToBackend = async () => {
+    if (!capturedImage) {
+      setMessage("⚠️ Please capture your face first.");
+      return;
+    }
 
-  try {
-    const file = dataURLtoFile(capturedImage, "captured.jpg");
+    try {
+      const file = dataURLtoFile(capturedImage, "captured.jpg");
 
-    // Use FormData because backend expects multipart/form-data
-    const formData = new FormData();
-    formData.append("file", file); // ✅ FIX: must be "file", not "capturedPhoto"
+      const formData = new FormData();
+      formData.append("photo", file);
+      formData.append("email", user.sub);  // ✅ required by backend
+      formData.append("location", location);         // ✅ optional
 
-    const res = await axios.post(
-      `${backendIP}/HRMS/api/attendance/mark`,
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
+      console.log([...formData.values()])
 
-    setMessage(res.data.message || "✅ Attendance marked!");
-  } catch (err) {
-    console.error("❌ Error marking attendance:", err.response?.data || err.message);
-    setMessage("❌ Error: " + (err.response?.data || err.message));
-  }
-};
+      const res = await axios.post(
+        `${backendIP}/HRMS/api/attendance/mark`,
+        formData,
+        {
+          headers: {
+            // Authorization: token,  // already has Bearer
+            // "Content-Type": "multipart/form-data" 
+          }
+        }
+      );
+
+      setMessage(res.data.message || "✅ Attendance marked!");
+      alert("✅ Attendance marked!");
+    } catch (err) {
+      console.error("❌ Error marking attendance:", err.response?.data || err.message);
+      setMessage("❌ Error: " + (err.response?.data || err.message));
+    }
+  };
+
 
 
   return (

@@ -40,7 +40,7 @@ export default function Employee_Navbar() {
 
         {/* Toggle button for small screens */}
         <button
-          className="navbar-toggler"
+          className="navbar-toggler text-white"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#employeeNavbar"
