@@ -11,7 +11,7 @@ const EmployeesList = () => {
 
     const { token } = useAuth();
     const navigate = useNavigate();
-    const [allEmployeesList, setAllEmployeesList] = useState(null);
+    const [allEmployeesList, setAllEmployeesList] = useState([]);
     const [selectedEmp, setSelectedEmp] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);

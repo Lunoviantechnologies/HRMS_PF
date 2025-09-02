@@ -1,15 +1,17 @@
 import { jwtDecode } from "jwt-decode";
-import { Children, createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    // const navigate = useNavigate();
-    const [token, setToken] = useState(() => localStorage.getItem('loggedUserToken'));
+    const getStoredToken = () => {
+        return( 
+            localStorage.getItem('loggedUserToken') || sessionStorage.getItem('loggedUserToken')
+        );
+    };
+    const [token, setToken] = useState(() => getStoredToken());
     const [user, setUser] = useState(() => {
-        const storedToken = localStorage.getItem('loggedUserToken');
+        const storedToken = getStoredToken();
         if (storedToken) {
             try {
                 const decoded = jwtDecode(storedToken);
@@ -39,11 +41,19 @@ export const AuthProvider = ({ children }) => {
         }
     }, [token]);
 
-    const login = (newToken, navigate) => {
+    const login = (newToken, rememberMe, navigate) => {
         try {
             const decoded = jwtDecode(newToken);
             // console.log(decoded);
-            localStorage.setItem('loggedUserToken', newToken);
+
+            if(rememberMe){
+                localStorage.setItem('loggedUserToken', newToken);
+                sessionStorage.removeItem("loggedUserToken");
+            } else {
+                sessionStorage.setItem('loggedUserToken', newToken);
+                localStorage.removeItem("loggedUserToken");
+            };
+
             setToken(newToken);
             setUser(decoded);
             if (decoded.role.toLowerCase() === "admin") {
@@ -52,7 +62,7 @@ export const AuthProvider = ({ children }) => {
                 navigate("/employee_dashboard");
             } else {
                 logout(navigate); // unknown role, force logout
-            }
+            };
         }
         catch (error) {
             console.error('Invalid token during login.');
@@ -61,6 +71,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = (navigate = null) => {
         localStorage.removeItem('loggedUserToken');
+        sessionStorage.removeItem("loggedUserToken");
         setToken(null);
         setUser(null);
         if (navigate) navigate("/");;

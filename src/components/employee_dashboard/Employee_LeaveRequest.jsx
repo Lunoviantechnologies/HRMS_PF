@@ -23,10 +23,11 @@ const Employee_LeaveRequest = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // console.log(formData);
+        console.log(user);
 
         try {
-            const response = await axios.post(`${backendIP}/HRMS/api/leaves/apply-leave/${user.sub }`, formData, {
+
+            const response = await axios.post(`${backendIP}/HRMS/api/leaves/apply-leave/${user.sub}`, formData, {
                 headers : {
                     Authorization : token,
                     "Content-Type": "application/json"

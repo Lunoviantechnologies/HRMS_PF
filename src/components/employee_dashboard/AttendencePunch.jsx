@@ -1,10 +1,11 @@
 import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
+import backendIP from "../../api"; // ✅ your backend base URL
 import { useAuth } from "../../context/AuthContext";
-import backendIP from "../../api";
 
-const AttendancePunch = ({ sub }) => {
+const AttendancePunch = () => {
+  const { token, user } = useAuth();
   const webcamRef = useRef(null);
   const { token } = useAuth();
 
@@ -12,11 +13,12 @@ const AttendancePunch = ({ sub }) => {
   const [location, setLocation] = useState("");
   const [message, setMessage] = useState("");
 
-  // Capture image from webcam
-  const capture = () => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    setCapturedImage(imageSrc);
-  };
+  // console.log(user)
+  // ✅ Live Clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Get location from backend (proxy to avoid CORS)
   const fetchLocation = () => {
@@ -38,37 +40,43 @@ const AttendancePunch = ({ sub }) => {
     }
   };
 
-  // Submit attendance to backend
-  const handleSubmit = async () => {
+  // ✅ Send Captured Face to Backend
+  const sendToBackend = async () => {
     if (!capturedImage) {
-      setMessage("⚠ Please capture an image first.");
+      setMessage("⚠️ Please capture your face first.");
       return;
     }
 
     try {
-      const file = await (await fetch(capturedImage)).blob();
-      const formData = new FormData();
-      formData.append("file", file, "attendance.jpg");
-      formData.append("employeeEmail", sub);
-      formData.append("location", location || "");
+      const file = dataURLtoFile(capturedImage, "captured.jpg");
 
-      const response = await axios.post(
+      const formData = new FormData();
+      formData.append("photo", file);
+      formData.append("email", user.sub);  // ✅ required by backend
+      formData.append("location", location);         // ✅ optional
+
+      console.log([...formData.values()])
+
+      const res = await axios.post(
         `${backendIP}/HRMS/api/attendance/mark`,
         formData,
         {
           headers: {
-            Authorization: token, // ✅ Fix here
-            "Content-Type": "multipart/form-data",
-          },
+            // Authorization: token,  // already has Bearer
+            // "Content-Type": "multipart/form-data" 
+          }
         }
       );
 
-      setMessage(response.data);
-    } catch (error) {
-      console.error("Error submitting attendance:", error);
-      setMessage("❌ Failed to submit attendance.");
+      setMessage(res.data.message || "✅ Attendance marked!");
+      alert("✅ Attendance marked!");
+    } catch (err) {
+      console.error("❌ Error marking attendance:", err.response?.data || err.message);
+      setMessage("❌ Error: " + (err.response?.data || err.message));
     }
   };
+
+
 
   return (
     <div style={{ textAlign: "center" }}>

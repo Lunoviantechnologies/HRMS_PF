@@ -6,112 +6,95 @@ import NotificationMenu from "./Notification"; // ✅ notification dropdown
 export default function Employee_Navbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notifications, setNotifications] = useState([]); // ✅ start empty
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     if (!user) {
       navigate("/");
     }
-
-    // 🔹 Later: fetch notifications here if needed
-    // axios.get("/api/notifications").then(res => setNotifications(res.data));
   }, [user, navigate]);
 
-  const handleLogout = () => {
-    logout(navigate);
-  };
-    const handleLeaveRequest = () => {
-        navigate('/employee_dashboard/leaveRequest');
-    };
-      const handleSalary = () => {
-        navigate('/employee_dashboard/salary');
-    };
-    
-
-  const handleAttendence = () => {
-    navigate("/employee_dashboard/attendence");
-  };
-
-  const handleNotificationClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationClose = () => {
-    setAnchorEl(null);
-  };
+  const handleLogout = () => logout(navigate);
+  const handleLeaveRequest = () => navigate("/employee_dashboard/leaveRequest");
+  const handleSalary = () => navigate("/employee_dashboard/salary");
+  const handleAttendence = () => navigate("/employee_dashboard/attendence");
+  const handleNotificationClose = () => setAnchorEl(null);
 
   return (
     <nav
-      className="navbar navbar-dark sticky-top py-3"
+      className="navbar navbar-expand-md navbar-dark sticky-top py-3"
       style={{ backgroundColor: "rgb(0,0,51)" }}
     >
       <div className="container-fluid">
-        <div className="row w-100 align-items-center">
-          {/* Left section - Logo + Title */}
-          <div className="col-md-4 d-flex align-items-center">
-            <button
-              className="btn btn-outline-light d-md-none me-2"
-              type="button"
-              data-bs-toggle="offcanvas"
-              data-bs-target="#offcanvasSidebar"
-              aria-controls="offcanvasSidebar"
-            >
-              <i className="bi bi-list"></i>
-            </button>
+        {/* Logo + Title */}
+        <a className="navbar-brand d-flex align-items-center" onClick={() => navigate("/employee_dashboard")} style={{ cursor: "pointer" }}>
+          <img
+            src="/lunovianLogo.jpg"
+            alt="Lunovian Logo"
+            className="me-2"
+            style={{ height: "60px", width: "60px", borderRadius: "50%", cursor: "pointer",}}
+          />
+          <span className="fw-bold">Lunovian Technologies</span>
+        </a>
 
-            <img
-              src="/lunovianLogo.jpg"
-              alt="Lunovian Logo"
-              className="me-3"
-              onClick={() => navigate("/employee_dashboard")}
-              style={{
-                height: "80px",
-                width: "80px",
-                borderRadius: "50%",
-                cursor: "pointer",
-              }}
-            />
-            <span className="navbar-brand mb-0 h1">
-              Lunovian Technologies
-            </span>
-          </div>
+        {/* Toggle button for small screens */}
+        <button
+          className="navbar-toggler text-white"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#employeeNavbar"
+          aria-controls="employeeNavbar"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
 
-          {/* Middle section - Actions */}
-          <div className="col-md-5 d-flex justify-content-center">
-            <button
-              className="btn btn-none border-0 text-white me-3"
-              onClick={handleLeaveRequest}
-            >
-              Leave Request
-            </button>
-            <button
-              className="btn btn-none border-0 text-white"
-              onClick={handleAttendence}
-            >
-              Attendance
-            </button>
-            <button
-              className="btn btn-none border-0 text-white"
-              onClick={handleSalary}
-            >
-              SalaryDetails
-            </button>
-          </div>
-
-          {/* Right section - Notifications + User Dropdown */}
-          <div className="col-md-3 d-flex justify-content-end align-items-center">
-            {/* 🔔 Notification Dropdown */}
-            <NotificationMenu
-              anchorEl={anchorEl}
-              handleClose={handleNotificationClose}
-              notifications={notifications} // ✅ empty until fetched
-            />
-
-            <div className="dropdown">
+        {/* Collapsible Content */}
+        <div className="collapse navbar-collapse" id="employeeNavbar">
+          {/* Center Nav Links */}
+          <ul className="navbar-nav mx-auto mb-2 mb-md-0">
+            <li className="nav-item">
               <button
-                className="btn btn-dark dropdown-toggle"
+                className="btn nav-link text-white"
+                onClick={handleLeaveRequest}
+              >
+                Leave Request
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className="btn nav-link text-white"
+                onClick={handleAttendence}
+              >
+                Attendance
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className="btn nav-link text-white"
+                onClick={handleSalary}
+              >
+                Salary Details
+              </button>
+            </li>
+          </ul>
+
+          {/* Right side (Notifications + Profile Dropdown) 
+              - shows inline on desktop
+              - stacked under menu on mobile */}
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item text-warning">
+              <NotificationMenu
+                anchorEl={anchorEl}
+                handleClose={handleNotificationClose}
+                notifications={notifications}
+              />
+            </li>
+            <li className="nav-item dropdown">
+              <button
+                className="btn btn-dark dropdown-toggle w-100"
                 type="button"
                 id="dropdownMenuButton"
                 data-bs-toggle="dropdown"
@@ -131,40 +114,28 @@ export default function Employee_Navbar() {
                 </span>
                 <span>{user?.sub}</span>
               </button>
-              <ul
-                className="dropdown-menu dropdown-menu-end"
-                aria-labelledby="dropdownMenuButton"
-              >
+              <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                 <li>
-                  <a
-                    className="dropdown-item"
-                    onClick={() => navigate("/employee_dashboard/profile")}
-                  >
+                  <button className="dropdown-item" onClick={() => navigate("/employee_dashboard/profile")}>
                     Profile
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a
-                    className="dropdown-item"
-                    onClick={() => navigate("/employee_dashboard/settings")}
-                  >
+                  <button className="dropdown-item" onClick={() => navigate("/employee_dashboard/settings")}>
                     Settings
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <hr className="dropdown-divider" />
                 </li>
                 <li>
-                  <a
-                    className="dropdown-item text-danger btn"
-                    onClick={handleLogout}
-                  >
+                  <button className="dropdown-item text-danger" onClick={handleLogout}>
                     Logout
-                  </a>
+                  </button>
                 </li>
               </ul>
-            </div>
-          </div>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
