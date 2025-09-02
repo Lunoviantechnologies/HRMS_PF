@@ -1,124 +1,95 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
-import backendIP from "../../api"; // ✅ your backend base URL
+import { useAuth } from "../../context/AuthContext";
+import backendIP from "../../api";
 
-const AttendancePunch = () => {
+const AttendancePunch = ({ sub }) => {
   const webcamRef = useRef(null);
+  const { token } = useAuth();
+
   const [capturedImage, setCapturedImage] = useState(null);
-  const [message, setMessage] = useState("");
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [location, setLocation] = useState("");
+  const [message, setMessage] = useState("");
 
-  // ✅ Live Clock
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // ✅ Fetch User Location (Address instead of lat/lon)
-  const fetchLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await response.json();
-          setLocation(data.display_name || "Location not found");
-        } catch (err) {
-          setLocation("Unable to fetch location");
-        }
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchLocation();
-  }, []);
-
-  // ✅ Capture Image from Webcam
+  // Capture image from webcam
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
-  // ✅ Convert base64 → File (needed for multipart/form-data)
-  const dataURLtoFile = (dataUrl, filename) => {
-    let arr = dataUrl.split(","), mime = arr[0].match(/:(.*?);/)[1];
-    let bstr = atob(arr[1]);
-    let n = bstr.length;
-    let u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
+  // Get location from backend (proxy to avoid CORS)
+  const fetchLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await axios.get(
+            `${backendIP}/HRMS/api/location/reverse?lat=${latitude}&lon=${longitude}`
+          );
+          setLocation(res.data.display_name || `${latitude}, ${longitude}`);
+        } catch (err) {
+          console.error("Location fetch error:", err);
+          setLocation(`${latitude}, ${longitude}`);
+        }
+      });
+    } else {
+      setLocation("Geolocation not supported");
     }
-    return new File([u8arr], filename, { type: mime });
   };
 
-  // ✅ Send Captured Face to Backend
-  // ✅ Send Captured Face to Backend
-const sendToBackend = async () => {
-  if (!capturedImage) {
-    setMessage("⚠️ Please capture your face first.");
-    return;
-  }
+  // Submit attendance to backend
+  const handleSubmit = async () => {
+    if (!capturedImage) {
+      setMessage("⚠ Please capture an image first.");
+      return;
+    }
 
-  try {
-    const file = dataURLtoFile(capturedImage, "captured.jpg");
+    try {
+      const file = await (await fetch(capturedImage)).blob();
+      const formData = new FormData();
+      formData.append("file", file, "attendance.jpg");
+      formData.append("employeeEmail", sub);
+      formData.append("location", location || "");
 
-    // Use FormData because backend expects multipart/form-data
-    const formData = new FormData();
-    formData.append("file", file); // ✅ FIX: must be "file", not "capturedPhoto"
+      const response = await axios.post(
+        `${backendIP}/HRMS/api/attendance/mark`,
+        formData,
+        {
+          headers: {
+            Authorization: token, // ✅ Fix here
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-    const res = await axios.post(
-      `${backendIP}/HRMS/api/attendance/mark`,
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
-
-    setMessage(res.data.message || "✅ Attendance marked!");
-  } catch (err) {
-    console.error("❌ Error marking attendance:", err.response?.data || err.message);
-    setMessage("❌ Error: " + (err.response?.data || err.message));
-  }
-};
-
+      setMessage(response.data);
+    } catch (error) {
+      console.error("Error submitting attendance:", error);
+      setMessage("❌ Failed to submit attendance.");
+    }
+  };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h2>📌 Attendance Punch</h2>
-      <h3>{currentTime.toLocaleTimeString()}</h3>
+    <div style={{ textAlign: "center" }}>
+      <h2>Attendance Punch</h2>
 
-      <Webcam
-        audio={false}
-        ref={webcamRef}
-        screenshotFormat="image/jpeg"
-        width={320}
-        height={240}
-      />
+      <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" width={300} />
+
       <br />
-
-      <button onClick={capture} style={{ margin: "10px", padding: "10px" }}>
-        📸 Capture
-      </button>
-      <button
-        onClick={sendToBackend}
-        disabled={!capturedImage}
-        style={{ margin: "10px", padding: "10px" }}
-      >
-        🚀 Punch In
-      </button>
+      <button onClick={capture}>📸 Capture</button>
+      <button onClick={fetchLocation}>📍 Get Location</button>
+      <button onClick={handleSubmit}>✅ Submit Attendance</button>
 
       {capturedImage && (
         <div>
-          <h4>Preview</h4>
-          <img src={capturedImage} alt="captured" width={220} />
+          <h4>Preview:</h4>
+          <img src={capturedImage} alt="Captured" width={200} />
         </div>
       )}
 
-      <p>📍 {location}</p>
-      <p>{message}</p>
+      {location && <p><b>Location:</b> {location}</p>}
+      {message && <p><b>Status:</b> {message}</p>}
     </div>
   );
 };
