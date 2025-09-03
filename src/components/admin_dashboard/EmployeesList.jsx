@@ -24,7 +24,7 @@ const EmployeesList = () => {
     };
 
     useEffect(() => {
-        axios.get(`${backendIP}/HRMS/api/employees/all`, {
+        axios.get(`${backendIP}/api/employees/all`, {
             headers: {
                 Authorization: token
             }
@@ -46,7 +46,7 @@ const EmployeesList = () => {
         const confirmDelete = window.confirm(`Are you sure you want to delete ${employee.firstName}?`);
         if (!confirmDelete) return;
 
-        axios.delete(`${backendIP}/HRMS/api/employees/delete/${employee.id}`, {
+        axios.delete(`${backendIP}/api/employees/delete/${employee.id}`, {
             headers: {
                 Authorization: token
             }

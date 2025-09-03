@@ -1,234 +1,199 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import Paper from "@mui/material/Paper";
-import Card from "@mui/material/Card";
 import { Button, Modal } from "react-bootstrap";
+import { Card, Paper } from "@mui/material";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
+import backendIP from "../../api";
 
-const Attendence = () => {
+// ================== Calendar Component ==================
+const AttendanceCalendar = ({ records }) => {
+    const [selectedDate, setSelectedDate] = useState(new Date());
+
+    // Convert date to YYYY-MM-DD
+    const formatDate = (date) => date.toISOString().split("T")[0];
+
+    // Decide tile class based on attendance
+    const tileClassName = ({ date, view }) => {
+        if (view === "month") {
+            const status = records.find(
+                (r) => formatDate(new Date(r.date)) === formatDate(date)
+            )?.status;
+
+            if (status === "present") return "present-day";
+            if (status === "absent") return "absent-day";
+            if (status === "half") return "halfday-day";
+        }
+        return null;
+    };
+
+    return (
+        <div style={{ textAlign: "center" }}>
+            <Calendar
+                onChange={setSelectedDate}
+                value={selectedDate}
+                tileClassName={tileClassName}
+            />
+
+            <p style={{ marginTop: "10px" }}>
+                Selected Date: <b>{selectedDate.toDateString()}</b>
+            </p>
+
+            {/* Legend */}
+            <div className="legend">
+                <span className="legend-item present">Present</span>
+                <span className="legend-item absent">Absent</span>
+                <span className="legend-item halfday">Half-day</span>
+            </div>
+        </div>
+    );
+};
+
+// ================== Main Component ==================
+const Attendance = () => {
+    const { token } = useAuth();
+    const [employeeAttendance, setEmployeeAttendance] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
-    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
 
-    // 📊 Mock attendance data
-    const attendanceRecords = {
-        1: {
-            "2025-07": [1, 2, 3, 5, 10, 12, 15],
-            "2025-06": [1, 3, 5, 7, 11],
-        },
-    };
+    // Fetch all employees
+    useEffect(() => {
+        axios
+            .get(`${backendIP}/api/attendance/all`, {
+                headers: { Authorization: token },
+            })
+            .then((res) => {
+                const formattedData = res.data.map((item, index) => ({
+                    id: item.id || index,
+                    employeeEmail: item.employeeEmail,
+                    location: item.location,
+                    photo: item.photo || "-",
+                    employeeId: item.employeeId,
+                    firstName: item.firstName || "",
+                    lastName: item.lastName || "",
+                    ...item,
+                }));
+                setEmployeeAttendance(formattedData);
+            })
+            .catch((err) => {
+                console.error("Error fetching attendance:", err);
+            });
+    }, [token]);
 
-    // 🖼 Mock captured attendance photos
-    const attendancePhotos = {
-        1: {
-            "2025-07-10": "https://via.placeholder.com/150", // Replace with real captured photo URL
-        },
-    };
-
+    // Handle view + fetch employee records
     const handleView = (row) => {
         setSelectedRow(row);
-        setSelectedMonth(new Date().getMonth());
-        setSelectedYear(new Date().getFullYear());
         setShowModal(true);
+
+        axios
+            .get(`${backendIP}/HRMS/api/attendance/${row.employeeId}`, {
+                headers: { Authorization: token },
+                params: { year: new Date().getFullYear() }, // full year records
+            })
+            .then((res) => {
+                setAttendanceRecords(res.data);
+            })
+            .catch((err) => {
+                console.error("Error fetching employee attendance:", err);
+            });
     };
 
-    const generateCalendar = (year, month) => {
-        const startDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        const days = [];
-        for (let i = 0; i < startDay; i++) days.push(null);
-        for (let d = 1; d <= daysInMonth; d++) days.push(d);
-
-        const weeks = [];
-        for (let i = 0; i < days.length; i += 7) {
-            weeks.push(days.slice(i, i + 7));
-        }
-
-        return { weeks, year, month, daysInMonth };
-    };
-
-    const calendar = generateCalendar(selectedYear, selectedMonth);
-
-    const getAttendanceData = () => {
-        const key = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
-        const presentDays = attendanceRecords[selectedRow?.id]?.[key] || [];
-        const totalDays = calendar.daysInMonth;
-        const absentDays = totalDays - presentDays.length;
-        return { presentDays, totalDays, absentDays };
-    };
-
-    const getPhotoForDay = (day) => {
-        const key = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")} -${String(day).padStart(2, "0")}`;
-        return attendancePhotos[selectedRow?.id]?.[key] || null;
-    };
-
-    const { presentDays, totalDays, absentDays } = getAttendanceData();
-
+    // DataGrid Columns
     const columns = [
         { field: "id", headerName: "ID", width: 70 },
-        { field: "firstName", headerName: "First name", width: 130 },
-        { field: "lastName", headerName: "Last name", width: 130 },
-        { field: "age", headerName: "Age", type: "number", width: 90 },
+        { field: "employeeEmail", headerName: "Email", width: 200 },
+        { field: "location", headerName: "Location", width: 150 },
+        {
+            field: "photo",
+            headerName: "Thumbnail",
+            width: 100,
+            renderCell: (params) =>
+                params.value && params.value !== "-" ? (
+                    <img
+                        src={`data:image/jpeg;base64,${params.value}`}
+                        alt="Employee"
+                        style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            objectFit: "cover"
+                        }}
+                    />
+                ) : (
+                    <span>No Photo</span>
+                ),
+        },
         {
             field: "actions",
             headerName: "Action",
             width: 120,
             renderCell: (params) => (
-                <Button variant="outline-primary" onClick={() => handleView(params.row)}>
+                <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => handleView(params.row)}
+                >
                     View
                 </Button>
             ),
         },
     ];
-    
-    const rows = [
-        { id: 1, lastName: "Snow", firstName: "Jon", age: 35 },
-        { id: 2, lastName: "Lannister", firstName: "Cersei", age: 42 },
-    ];
-    // console.log(rows);
 
     return (
-        <div>
-            <h1>Employee Attendance</h1>
+        <div className="container mt-4">
+            <h1 className="mb-3">Employee Attendance</h1>
 
-            <Card sx={{ padding: "10px", boxShadow: 4, marginTop: 3 }}>
-                <h4 style={{ textAlign: "center" }}>Employee Attendance</h4>
+            <Card sx={{ padding: "15px", boxShadow: 4, marginTop: 3 }}>
+                <h4 style={{ textAlign: "center" }}>Employee Attendance List</h4>
                 <Paper sx={{ height: 400, width: "100%", marginTop: "20px" }}>
                     <DataGrid
-                        rows={rows}
+                        rows={employeeAttendance}
                         columns={columns}
                         pageSizeOptions={[5, 10]}
                         checkboxSelection
+                        getRowId={(row) => row.id}
                     />
                 </Paper>
             </Card>
 
             {/* Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+            <Modal
+                show={showModal}
+                onHide={() => setShowModal(false)}
+                centered
+                size="lg"
+            >
                 <Modal.Header closeButton>
                     <Modal.Title>Attendance Record</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {selectedRow && (
-                        <div className="d-flex flex-column gap-4">
-                            <div className="d-flex gap-4 align-items-center">
-                                <div>
-                                    <h5>
-                                        <strong>Name:</strong> {selectedRow.firstName} {selectedRow.lastName}
-                                    </h5>
-                                    <p><strong>Employee ID:</strong> {selectedRow.id}</p>
-                                    <p><strong>Age:</strong> {selectedRow.age}</p>
-                                </div>
-                            </div>
+                        <div>
+                            <h5>
+                                <strong>Name:</strong> {selectedRow.firstName}{" "}
+                                {selectedRow.lastName}
+                            </h5>
+                            <p>
+                                <strong>Email:</strong> {selectedRow.employeeEmail}
+                            </p>
 
-                            {/* Month and Year Selectors */}
-                            <div className="d-flex gap-3 align-items-center">
-                                <div>
-                                    <label>Month:</label>
-                                    <select
-                                        className="form-select"
-                                        value={selectedMonth}
-                                        onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                                    >
-                                        {Array.from({ length: 12 }, (_, i) => (
-                                            <option key={i} value={i}>
-                                                {new Date(0, i).toLocaleString("default", { month: "long" })}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label>Year:</label>
-                                    <select
-                                        className="form-select"
-                                        value={selectedYear}
-                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                    >
-                                        {Array.from({ length: 5 }, (_, i) => {
-                                            const y = new Date().getFullYear() - i;
-                                            return <option key={y} value={y}>{y}</option>;
-                                        })}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Summary */}
-                            <div>
-                                <p><strong>Total Days:</strong> {totalDays}</p>
-                                <p><strong>Present:</strong> {presentDays.length}</p>
-                                <p><strong>Absent:</strong> {absentDays}</p>
-                            </div>
-
-                            {/* Calendar */}
-                            <div className="mt-2">
-                                <h5 className="mb-2">
-                                    {new Date(selectedYear, selectedMonth).toLocaleString("default", {
-                                        month: "long", year: "numeric"
-                                    })}
-                                </h5>
-                                <div style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(7, 1fr)",
-                                    textAlign: "center",
-                                    fontWeight: "bold",
-                                    gap: "4px"
-                                }}>
-                                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                                        <div key={day}>{day}</div>
-                                    ))}
-                                </div>
-                                {calendar.weeks.map((week, i) => (
-                                    <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
-                                        {week.map((day, j) => {
-                                            const dateObj = new Date(selectedYear, selectedMonth, day || 1);
-                                            const dayOfWeek = dateObj.getDay();
-
-                                            const isHoliday = day !== null && (dayOfWeek === 0 || dayOfWeek === 6);
-                                            const isPresent = day !== null && presentDays.includes(day);
-                                            const isAbsent = day !== null && !isPresent && !isHoliday;
-
-                                            let bgColor = "#f1f1f1", color = "#000";
-                                            if (isHoliday) {
-                                                bgColor = "#ffc107"; // yellow
-                                            } else if (isPresent) {
-                                                bgColor = "#28a745"; // green
-                                                color = "#fff";
-                                            } else if (isAbsent) {
-                                                bgColor = "#dc3545"; // red
-                                                color = "#fff";
-                                            }
-
-                                            return (
-                                                <div key={j} style={{
-                                                    padding: "10px",
-                                                    borderRadius: "6px",
-                                                    backgroundColor: bgColor,
-                                                    color,
-                                                    minHeight: "40px",
-                                                    fontWeight: "500"
-                                                }}>
-                                                    {day || ""}
-                                                    {day && getPhotoForDay(day) && (
-                                                        <div>
-                                                            <img src={getPhotoForDay(day)} alt="proof" width="40" height="40" style={{ marginTop: '4px', borderRadius: '4px' }} />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </div>
+                            {/* Real Calendar */}
+                            <AttendanceCalendar records={attendanceRecords} />
                         </div>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+                    <Button variant="secondary" onClick={() => setShowModal(false)}>
+                        Close
+                    </Button>
                 </Modal.Footer>
             </Modal>
         </div>
     );
 };
 
-export default Attendence;
+export default Attendance;
+
