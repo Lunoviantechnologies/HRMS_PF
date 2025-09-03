@@ -59,7 +59,7 @@ const Attendance = () => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [attendanceRecords, setAttendanceRecords] = useState([]);
 
-    // Fetch all employees
+    // Fetch all employees 
     useEffect(() => {
         axios
             .get(`${backendIP}/api/attendance/all`, {
