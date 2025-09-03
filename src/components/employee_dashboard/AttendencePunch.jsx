@@ -77,7 +77,7 @@ const AttendancePunch = () => {
       console.log([...formData.values()])
 
       const res = await axios.post(
-        `${backendIP}/HRMS/api/attendance/mark`,
+        `${backendIP}/api/attendance/mark`,
         formData,
         {
           headers: {

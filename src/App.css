@@ -26,6 +26,53 @@
   font-weight: 600 !important;
 }
 
+/* Attendence styling  */
+.present-day {
+  background: #4caf50 !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+.absent-day {
+  background: #f44336 !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+.halfday-day {
+  background: #ff9800 !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.legend-item {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.legend-item.present {
+  background: #4caf50;
+  color: white;
+}
+
+.legend-item.absent {
+  background: #f44336;
+  color: white;
+}
+
+.legend-item.halfday {
+  background: #ff9800;
+  color: white;
+}
+
 
 
 

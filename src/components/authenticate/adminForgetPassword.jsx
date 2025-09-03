@@ -19,7 +19,7 @@ export default function AdminForgotPassword() {
   const handleSendOtp = async () => {
     try {
         setLoading(true);
-      const res = await axios.post(`${backendIP}/HRMS/api/otp/send/${email}`);
+      const res = await axios.post(`${backendIP}/api/otp/send/${email}`);
       setMessage(res.data);
       setStep(2);
     } catch (err) {
@@ -33,7 +33,7 @@ export default function AdminForgotPassword() {
   const handleValidateOtp = async () => {
     try {
         setLoading(true);
-        const res = await axios.post( `${backendIP}/HRMS/api/otp/validateOtp`, { email: email, otp: otp },
+        const res = await axios.post( `${backendIP}/api/otp/validateOtp`, { email: email, otp: otp },
             { headers: { "Content-Type": "application/json" } }
         );
         setMessage(res.data);
@@ -49,7 +49,7 @@ export default function AdminForgotPassword() {
   const handleResetPassword = async () => {
     try {
         setLoading(true);
-      const res = await axios.post( `${backendIP}/HRMS/api/otp/update-password`,
+      const res = await axios.post( `${backendIP}/api/otp/update-password`,
         { email: email, otp: otp, newPassword: newPassword },
         { headers: { "Content-Type": "application/json" } }
       );

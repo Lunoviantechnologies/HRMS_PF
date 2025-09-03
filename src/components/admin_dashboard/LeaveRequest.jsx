@@ -16,7 +16,7 @@ export default function LeaveRequest() {
   useEffect(() => {
     const fetchLeaveRequests = async () => {
       try {
-        const res = await axios.get(`${backendIP}/HRMS/api/leaves`, {
+        const res = await axios.get(`${backendIP}/api/leaves`, {
           headers: {
             Authorization: token
           }
@@ -37,7 +37,7 @@ export default function LeaveRequest() {
 
     try {
       await axios.put(
-        `${backendIP}/HRMS/api/leaves/updateStatus/${id}`,
+        `${backendIP}/api/leaves/updateStatus/${id}`,
         { status: newStatus },
         {
           headers: {
