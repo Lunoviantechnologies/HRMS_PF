@@ -7,6 +7,8 @@ import { styled } from "@mui/material/styles";
 import axios from "axios";
 import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import FaceCapture from "./FaceCapture";
+import { useFormikContext } from "formik";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -125,7 +127,40 @@ const AddEmployee = () => {
         }
     };
 
+    // validate firstname + lastname together
+    const checkNameCombination = async (lastName, values) => {
+        console.log(values.firstName, lastName);
+        if (!lastName) return "Last name is required";
+        try {
+            const res = await axios.get(`${backendIP}/api/employees/check-name?firstName=${values.firstName}&lastName=${lastName}`);
+            console.log(res.data.isUnique);
+            if (res.data.isUnique) {
+                return "This first + last name already exists";
+            }
+        } catch (err) {
+            console.error(err);
+            return "Error verifying name";
+        }
+    };
+
+    // validate email for uniqueness
+    const checkEmail = async (value) => {
+        if (!value) return "Email is required";
+        try {
+            const res = await axios.post(`${backendIP}/api/employees/check-email`, {
+                emailId: value,
+            });
+            if (res.data.exists) {
+                return "Email already exists";
+            }
+        } catch (err) {
+            console.error(err);
+            return "Error verifying email";
+        }
+    };
+
     const handleSubmitForm = async (values, { resetForm }) => {
+        console.log("Response:", values);
         try {
             const formDataToSend = new FormData();
             Object.keys(values).forEach((key) => {
@@ -144,7 +179,7 @@ const AddEmployee = () => {
             if (values.document2) formDataToSend.append("document2", values.document2);
             if (values.document3) formDataToSend.append("document3", values.document3);
 
-            const res = await axios.post(`${backendIP}/HRMS/api/employees/register`, formDataToSend, {
+            const res = await axios.post(`${backendIP}/api/employees/register`, formDataToSend, {
                 headers: {
                     Authorization: token,
                     "Content-Type": "multipart/form-data",
@@ -171,7 +206,7 @@ const AddEmployee = () => {
                 validationSchema={validationSchemas[step]}
                 onSubmit={(values, { resetForm }) => handleSubmitForm(values, { resetForm })}
             >
-                {({ setFieldValue, errors, touched }) => (
+                {({ setFieldValue, errors, touched, values }) => (
                     <Form>
                         {/* 🔹 Step 0 */}
                         {step === 0 && (
@@ -197,23 +232,28 @@ const AddEmployee = () => {
                                         as={TextField}
                                         name="firstName"
                                         label="First Name"
-                                        error={touched.firstName && Boolean(errors.firstName)}
                                         helperText={<ErrorMessage name="firstName" />}
                                     />
-                                    <Field
-                                        as={TextField}
-                                        name="lastName"
-                                        label="Last Name"
-                                        error={touched.lastName && Boolean(errors.lastName)}
-                                        helperText={<ErrorMessage name="lastName" />}
-                                    />
-                                    <Field
-                                        as={TextField}
-                                        name="emailId"
-                                        label="Email ID"
-                                        error={touched.emailId && Boolean(errors.emailId)}
-                                        helperText={<ErrorMessage name="emailId" />}
-                                    />
+                                    <Field name="lastName" validate={(val) => checkNameCombination(val, values)}>
+                                        {({ field, meta }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Last Name"
+                                                error={meta.touched && Boolean(meta.error)}
+                                                helperText={meta.touched && meta.error}
+                                            />
+                                        )}
+                                    </Field>
+                                    <Field name="emailId" validate={checkEmail}>
+                                        {({ field, meta }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Email ID"
+                                                error={meta.touched && Boolean(meta.error)}
+                                                helperText={meta.touched && meta.error}
+                                            />
+                                        )}
+                                    </Field>
                                     <Field
                                         as={TextField}
                                         name="contactNumber1"
@@ -483,27 +523,6 @@ const AddEmployee = () => {
                                         <div style={{ color: "red", fontSize: "12px" }}>{errors.profilePhoto}</div>
                                     )}
 
-                                    {/* Face Images */}
-                                    <Button
-                                        component="label"
-                                        variant="contained"
-                                        startIcon={<CloudUploadIcon />}
-                                    >
-                                        Upload Face Images
-                                        <VisuallyHiddenInput
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            onChange={(event) => {
-                                                const files = Array.from(event.currentTarget.files);
-                                                setFieldValue("faceImages", files);
-                                            }}
-                                        />
-                                    </Button>
-                                    {touched.faceImages && errors.faceImages && (
-                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.faceImages}</div>
-                                    )}
-
                                     {/* Document 1 */}
                                     <Button
                                         component="label"
@@ -563,6 +582,14 @@ const AddEmployee = () => {
                                             }}
                                         />
                                     </Button>
+
+                                    {/* Face Images */}
+                                    <FaceCapture setFieldValue={setFieldValue} />
+
+                                    {/* Optional error display */}
+                                    {touched.faceImages && errors.faceImages && (
+                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.faceImages}</div>
+                                    )}
                                 </Box>
                             </Card>
                         )}
