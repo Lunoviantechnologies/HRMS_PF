@@ -11,6 +11,7 @@ import {
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import axios from "axios";
 import backendIP from "../../api"; 
+
 export default function NotificationMenu({ userRole, employeeId }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -46,6 +47,9 @@ export default function NotificationMenu({ userRole, employeeId }) {
 
   useEffect(() => {
     fetchNotifications();
+
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -71,7 +75,7 @@ export default function NotificationMenu({ userRole, employeeId }) {
         disableScrollLock
       >
         <Typography variant="h6" sx={{ px: 2, py: 1 }}>
-          Notifications
+          {userRole === "admin" ? "Admin Notifications" : "Your Notifications"}
         </Typography>
         <Divider />
 

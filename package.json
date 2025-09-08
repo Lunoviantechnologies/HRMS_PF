@@ -21,6 +21,7 @@
     "axios": "^1.11.0",
     "bootstrap": "^5.3.7",
     "bootstrap-icons": "^1.13.1",
+    "face-api.js": "^0.22.2",
     "formik": "^2.4.6",
     "jspdf": "^3.0.1",
     "jwt-decode": "^4.0.0",

@@ -1,25 +1,72 @@
 import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
-import backendIP from "../../api"; // ✅ your backend base URL
+import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
-  const { token, user } = useAuth();    
+  const { token, user, logout } = useAuth();
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [message, setMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [location, setLocation] = useState("");
+  const [punchedIn, setPunchedIn] = useState(false);
+  const [punchInTime, setPunchInTime] = useState(null);
+  const [workingHours, setWorkingHours] = useState("00:00:00");
 
-  // console.log(user)
+  // Unique key for this employee
+  const punchKey = `punchIn_${user?.sub}`;
+
   // ✅ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ Fetch User Location (Address instead of lat/lon)
+  // ✅ Restore punch-in state on refresh
+  useEffect(() => {
+    if (!user?.sub) return;
+    const storedData = localStorage.getItem(punchKey);
+    if (storedData) {
+      const { image, time } = JSON.parse(storedData);
+      setCapturedImage(image);
+      setPunchInTime(new Date(time));
+      setPunchedIn(true);
+    }
+  }, [user, punchKey]);
+
+  // ✅ Calculate working hours
+  useEffect(() => {
+    if (punchInTime) {
+      const interval = setInterval(() => {
+        const diffMs = new Date() - new Date(punchInTime);
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+        setWorkingHours(
+          `${hours.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+        );
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [punchInTime]);
+
+  // ✅ Auto logout at 6PM
+  useEffect(() => {
+    const checkLogout = setInterval(() => {
+      const now = new Date();
+      if (now.getHours() >= 18) {
+        localStorage.removeItem(punchKey);
+        logout();
+      }
+    }, 60000);
+    return () => clearInterval(checkLogout);
+  }, [logout, punchKey]);
+
+  // ✅ Fetch User Location
   const fetchLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -36,20 +83,20 @@ const AttendancePunch = () => {
       });
     }
   };
-
   useEffect(() => {
     fetchLocation();
   }, []);
 
-  // ✅ Capture Image from Webcam
+  // ✅ Capture Image
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
-  // ✅ Convert base64 → File (needed for multipart/form-data)
+  // ✅ Convert base64 → File
   const dataURLtoFile = (dataUrl, filename) => {
-    let arr = dataUrl.split(","), mime = arr[0].match(/:(.*?);/)[1];
+    let arr = dataUrl.split(","),
+      mime = arr[0].match(/:(.*?);/)[1];
     let bstr = atob(arr[1]);
     let n = bstr.length;
     let u8arr = new Uint8Array(n);
@@ -59,7 +106,7 @@ const AttendancePunch = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  // ✅ Send Captured Face to Backend
+  // ✅ Send to Backend
   const sendToBackend = async () => {
     if (!capturedImage) {
       setMessage("⚠️ Please capture your face first.");
@@ -71,21 +118,24 @@ const AttendancePunch = () => {
 
       const formData = new FormData();
       formData.append("photo", file);
-      formData.append("email", user.sub);  
+      formData.append("email", user.sub); // backend still uses email
       formData.append("location", location);
 
-      console.log([...formData.values()])
+      const res = await axios.post(`${backendIP}/api/attendance/mark`, formData, {
+        headers: {
+          Authorization: token,
+        },
+      });
 
-      const res = await axios.post(
-        `${backendIP}/api/attendance/mark`,
-        formData,
-        {
-          headers: {
-            // Authorization: token,  // already has Bearer
-            //"Content-Type": "multipart/form-data/json" 
-          }
-        }
+      // ✅ Save punch-in state for this employee
+      const punchTime = new Date();
+      localStorage.setItem(
+        punchKey,
+        JSON.stringify({ image: capturedImage, time: punchTime.toISOString() })
       );
+
+      setPunchInTime(punchTime);
+      setPunchedIn(true);
 
       setMessage(res.data.message || "✅ Attendance marked!");
       alert("✅ Attendance marked!");
@@ -95,38 +145,40 @@ const AttendancePunch = () => {
     }
   };
 
-
-
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h2>📌 Attendance Punch</h2>
       <h3>{currentTime.toLocaleTimeString()}</h3>
 
-      <Webcam
-        audio={false}
-        ref={webcamRef}
-        screenshotFormat="image/jpeg"
-        width={320}
-        height={240}
-      />
-      <br />
-
-      <button onClick={capture} style={{ margin: "10px", padding: "10px" }}>
-        📸 Capture
-      </button>
-      <button
-        onClick={sendToBackend}
-        disabled={!capturedImage}
-        style={{ margin: "10px", padding: "10px" }}
-      >
-        🚀 Punch In
-      </button>
-
-      {capturedImage && (
-        <div>
-          <h4>Preview</h4>
-          <img src={capturedImage} alt="captured" width={220} />
-        </div>
+      {!punchedIn ? (
+        <>
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            width={320}
+            height={240}
+          />
+          <br />
+          <button onClick={capture} style={{ margin: "10px", padding: "10px" }}>
+            📸 Capture
+          </button>
+          <button
+            onClick={sendToBackend}
+            disabled={!capturedImage}
+            style={{ margin: "10px", padding: "10px" }}
+          >
+            🚀 Punch In
+          </button>
+        </>
+      ) : (
+        <>
+          <h4>✅ Punched In</h4>
+          {capturedImage && <img src={capturedImage} alt="captured" width={220} />}
+          <p>👤 Employee: {user?.name || user?.fullName || user?.sub}</p>
+          <p>🕒 Punch In Time: {punchInTime?.toLocaleTimeString()}</p>
+          <p>⏱️ Working Hours: {workingHours}</p>
+        </>
       )}
 
       <p>📍 {location}</p>
@@ -135,4 +187,4 @@ const AttendancePunch = () => {
   );
 };
 
-export default AttendancePunch; 
+export default AttendancePunch;
