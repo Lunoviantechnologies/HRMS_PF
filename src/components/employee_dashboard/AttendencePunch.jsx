@@ -7,7 +7,6 @@ import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
   const { token, user, logout } = useAuth();
-  const { token, user, logout } = useAuth();
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [message, setMessage] = useState("");
@@ -101,8 +100,6 @@ const AttendancePunch = () => {
   const dataURLtoFile = (dataUrl, filename) => {
     let arr = dataUrl.split(","),
       mime = arr[0].match(/:(.*?);/)[1];
-    let arr = dataUrl.split(","),
-      mime = arr[0].match(/:(.*?);/)[1];
     let bstr = atob(arr[1]);
     let n = bstr.length;
     let u8arr = new Uint8Array(n);
@@ -194,5 +191,4 @@ const AttendancePunch = () => {
   );
 };
 
-export default AttendancePunch;
 export default AttendancePunch;
