@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import backendIP from "../../api";
+import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
+  const { token, user, logout } = useAuth();
   const { token, user, logout } = useAuth();
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
@@ -88,13 +90,17 @@ const AttendancePunch = () => {
   }, []);
 
   // ✅ Capture Image
+  // ✅ Capture Image
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
   // ✅ Convert base64 → File
+  // ✅ Convert base64 → File
   const dataURLtoFile = (dataUrl, filename) => {
+    let arr = dataUrl.split(","),
+      mime = arr[0].match(/:(.*?);/)[1];
     let arr = dataUrl.split(","),
       mime = arr[0].match(/:(.*?);/)[1];
     let bstr = atob(arr[1]);
@@ -107,9 +113,10 @@ const AttendancePunch = () => {
   };
 
   // ✅ Send to Backend
+  // ✅ Send to Backend
   const sendToBackend = async () => {
     if (!capturedImage) {
-      setMessage("⚠️ Please capture your face first.");
+      setMessage("⚠ Please capture your face first.");
       return;
     }
 
@@ -187,4 +194,5 @@ const AttendancePunch = () => {
   );
 };
 
+export default AttendancePunch;
 export default AttendancePunch;
