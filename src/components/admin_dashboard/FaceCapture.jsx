@@ -67,7 +67,7 @@ const FaceCapture = ({ setFieldValue }) => {
 
                 canvas.toBlob((blob) => {
                     const file = new File([blob], `face-${Date.now()}.png`, { type: "image/png" });
-                    setFieldValue("faceImages", [file]);
+                    setFieldValue("imageDir", [file]);
                     setCaptured(URL.createObjectURL(file));
                 });
 

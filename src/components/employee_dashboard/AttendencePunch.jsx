@@ -5,8 +5,9 @@ import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
-  const { token, user, logout } = useAuth(); 
+  const { token, user, logout } = useAuth();
   const webcamRef = useRef(null);
+
   const [capturedImage, setCapturedImage] = useState(null);
   const [message, setMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -30,39 +31,54 @@ const AttendancePunch = () => {
     const storedData = localStorage.getItem(punchKey);
     if (storedData) {
       const { image, time } = JSON.parse(storedData);
-      setCapturedImage(image);
-      setPunchInTime(new Date(time));
-      setPunchedIn(true);
+      const storedDate = new Date(time);
+
+      // restore only if it's still the same day
+      const today = new Date();
+      if (
+        storedDate.getFullYear() === today.getFullYear() &&
+        storedDate.getMonth() === today.getMonth() &&
+        storedDate.getDate() === today.getDate()
+      ) {
+        setCapturedImage(image);
+        setPunchInTime(storedDate);
+        setPunchedIn(true);
+      } else {
+        localStorage.removeItem(punchKey);
+      }
     }
   }, [user, punchKey]);
 
   // ✅ Calculate working hours
   useEffect(() => {
-    if (punchInTime) {
-      const interval = setInterval(() => {
-        const diffMs = new Date() - new Date(punchInTime);
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-        setWorkingHours(
-          `${hours.toString().padStart(2, "0")}:${minutes
-            .toString()
-            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-        );
-      }, 1000);
-      return () => clearInterval(interval);
-    }
+    if (!punchInTime) return;
+    const interval = setInterval(() => {
+      const diffMs = new Date() - new Date(punchInTime);
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+      setWorkingHours(
+        `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+      );
+    }, 1000);
+    return () => clearInterval(interval);
   }, [punchInTime]);
 
   // ✅ Auto logout at 6PM
   useEffect(() => {
     const checkLogout = setInterval(() => {
       const now = new Date();
-      if (now.getHours() >= 18) {
+      if (now.getHours() === 18 && now.getMinutes() === 0) {
         localStorage.removeItem(punchKey);
+        setPunchedIn(false);
+        setPunchInTime(null);
+        setWorkingHours("00:00:00");
+        setCapturedImage(null);
         logout();
       }
-    }, 60000);
+    }, 1000); // check every second for accuracy
     return () => clearInterval(checkLogout);
   }, [logout, punchKey]);
 
@@ -88,13 +104,11 @@ const AttendancePunch = () => {
   }, []);
 
   // ✅ Capture Image
-  // ✅ Capture Image
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
-  // ✅ Convert base64 → File
   // ✅ Convert base64 → File
   const dataURLtoFile = (dataUrl, filename) => {
     let arr = dataUrl.split(","),
@@ -108,7 +122,6 @@ const AttendancePunch = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  // ✅ Send to Backend
   // ✅ Send to Backend
   const sendToBackend = async () => {
     if (!capturedImage) {
@@ -124,11 +137,15 @@ const AttendancePunch = () => {
       formData.append("email", user.sub); // backend still uses email
       formData.append("location", location);
 
-      const res = await axios.post(`${backendIP}/api/attendance/mark`, formData, {
-        headers: {
-          Authorization: token,
-        },
-      });
+      const res = await axios.post(
+        `${backendIP}/api/attendance/mark`,
+        formData,
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
 
       // ✅ Save punch-in state for this employee
       const punchTime = new Date();
@@ -151,7 +168,9 @@ const AttendancePunch = () => {
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h2>📌 Attendance Punch</h2>
-      <h3>{currentTime.toLocaleTimeString()}</h3>
+      <h3>
+        {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
+      </h3>
 
       {!punchedIn ? (
         <>
@@ -177,9 +196,14 @@ const AttendancePunch = () => {
       ) : (
         <>
           <h4>✅ Punched In</h4>
-          {capturedImage && <img src={capturedImage} alt="captured" width={220} />}
+          {capturedImage && (
+            <img src={capturedImage} alt="captured" width={220} />
+          )}
           <p>👤 Employee: {user?.name || user?.fullName || user?.sub}</p>
-          <p>🕒 Punch In Time: {punchInTime?.toLocaleTimeString()}</p>
+          <p>
+            🕒 Punch In Time:{" "}
+            {punchInTime?.toLocaleDateString()} {punchInTime?.toLocaleTimeString()}
+          </p>
           <p>⏱️ Working Hours: {workingHours}</p>
         </>
       )}

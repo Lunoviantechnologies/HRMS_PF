@@ -108,7 +108,7 @@ const initialValues = {
     bankBranch: "",
     basicEmployeeSalary: "",
     password: "",
-    faceImages: [],
+    imageDir: [],
     profilePhoto: null,
     document1: null,
     document2: null,
@@ -165,14 +165,14 @@ const AddEmployee = () => {
             const formDataToSend = new FormData();
             Object.keys(values).forEach((key) => {
                 if (
-                    !["faceImages", "profilePhoto", "document1", "document2", "document3"].includes(key)
+                    !["imageDir", "profilePhoto", "document1", "document2", "document3"].includes(key)
                 ) {
                     formDataToSend.append(key, values[key]);
                 }
             });
 
-            if (values.faceImages?.length) {
-                values.faceImages.forEach((file) => formDataToSend.append("faceImages", file));
+            if (values.imageDir?.length) {
+                values.imageDir.forEach((file) => formDataToSend.append("imageDir", file));
             }
             if (values.profilePhoto) formDataToSend.append("profilePhoto", values.profilePhoto);
             if (values.document1) formDataToSend.append("document1", values.document1);
@@ -587,8 +587,8 @@ const AddEmployee = () => {
                                     <FaceCapture setFieldValue={setFieldValue} />
 
                                     {/* Optional error display */}
-                                    {touched.faceImages && errors.faceImages && (
-                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.faceImages}</div>
+                                    {touched.imageDir && errors.imageDir && (
+                                        <div style={{ color: "red", fontSize: "12px" }}>{errors.imageDir}</div>
                                     )}
                                 </Box>
                             </Card>
