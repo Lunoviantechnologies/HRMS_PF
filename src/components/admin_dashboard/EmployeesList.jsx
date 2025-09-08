@@ -54,7 +54,7 @@ const EmployeesList = () => {
             console.log('Employee deleted successfully', res.data);
             alert('Employee deleted successfully');
 
-            const updatedEmployeesList = allEmployeesList.filter(removeEmployee => removeEmployee.id != employee.id);
+            const updatedEmployeesList = allEmployeesList.filter(removeEmployee => removeEmployee.id !== employee.id);
             setAllEmployeesList(updatedEmployeesList);
         }).catch(err => {
             console.log('Employee not deleted', err);
