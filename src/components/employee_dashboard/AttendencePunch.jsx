@@ -5,7 +5,7 @@ import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
-  const { token, user, logout } = useAuth();
+  const { token, user, logout } = useAuth(); 
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [message, setMessage] = useState("");
