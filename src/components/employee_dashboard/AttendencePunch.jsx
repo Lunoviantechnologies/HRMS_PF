@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import backendIP from "../../api";
-import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
