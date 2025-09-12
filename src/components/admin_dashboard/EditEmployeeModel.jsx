@@ -48,7 +48,7 @@ const EditEmployeeModel = ({ show, onHide, employee }) => {
         }
       }
 
-      const response = await axios.put(`${backendIP}/api/employees/update/${employeeDetails.id}`, formDataToSend,
+      const response = await axios.put(`${backendIP}/api/employees/update/${employeeDetails.emailId}`, formDataToSend,
         {
           headers: {
             Authorization: token,

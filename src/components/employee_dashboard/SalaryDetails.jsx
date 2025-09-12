@@ -1,72 +1,84 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, Typography, Button, Grid } from "@mui/material";
+import { Box, Card, CardContent, Typography, Button, Grid, TextField, MenuItem, Table, TableBody, TableCell, TableHead, TableRow, Divider } from "@mui/material";
 import jsPDF from "jspdf";
 import axios from "axios";
 import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const SalaryDetails = () => {
+  const { token, user } = useAuth();
   const [salaryData, setSalaryData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    employeeId: "",
+    month: "",
+    year: "",
+  });
 
-  useEffect(() => {
-    const fetchSalary = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("loggedUser"));
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        const response = await axios.get(
-          `${backendIP}/HRMS/employee/salary/${user.employeeId}`,
-          { headers: { Authorization: `Bearer ${user.token}` } }
-        );
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-        setSalaryData(response.data);
-      } catch (error) {
-        console.error("Error fetching salary details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const { employeeId, month, year } = formData;
 
-    fetchSalary();
-  }, []);
-
-  if (loading) {
-    return (
-      <Card sx={{ maxWidth: 800, margin: "20px auto", borderRadius: "12px", boxShadow: 3 }}>
-        <CardContent>
-          <Typography variant="h6" align="center">Loading salary details...</Typography>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!salaryData) {
-    return (
-      <Card sx={{ maxWidth: 800, margin: "20px auto", borderRadius: "12px", boxShadow: 3 }}>
-        <CardContent>
-          <Typography variant="h6" color="error" align="center">Failed to load salary details</Typography>
-        </CardContent>
-      </Card>
-    );
-  }
+    axios
+      .get(`${backendIP}/api/payslip/${employeeId}?month=${month}&year=${year}`, {
+        // headers: { Authorization: token }
+      })
+      .then((res) => {
+        setSalaryData(res.data);
+        console.log("fetching salary details:", res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching salary details:", err);
+        setError("Failed to load salary details");
+        setSalaryData(null);
+      })
+      .finally(() => setLoading(false));
+  };
 
   // Example backend response (make sure backend matches this shape)
+  const defaultData = {
+    employeeName: "Employee",
+    jobTitle: "Software Engineer",
+    dateOfJoining: "2025-01-01",
+    payPeriod: "May 1, 2025 to May 31, 2025",
+    payDate: "June 6, 2025",
+    basic: 15000,
+    hra: 5250,
+    cca: 2500,
+    conveyance: 2500,
+    allowance: 2800,
+    epf: 1800,
+    grossEarning: 28050,
+    netPay: 26250,
+    paidDays: 31,
+    lopDays: 0,
+  };
+
   const {
-    employeeName = "Employee",
-    jobTitle = "Software Engineer",
-    dateOfJoining = "2025-01-01",
-    payPeriod = "May 1, 2025 to May 31, 2025",
-    payDate = "June 6, 2025",
-    basic = 15000,
-    hra = 5250,
-    cca = 2500,
-    conveyance = 2500,
-    allowance = 2800,
-    epf = 1800,
-    grossEarning = 28050,
-    netPay = 26250,
-    paidDays = 31,
-    lopDays = 0,
-  } = salaryData;
+    employeeName,
+    jobTitle,
+    dateOfJoining,
+    payPeriod,
+    payDate,
+    basic,
+    hra,
+    cca,
+    conveyance,
+    allowance,
+    epf,
+    grossEarning,
+    netPay,
+    paidDays,
+    lopDays,
+  } = salaryData || defaultData;
 
   // 📄 Generate Payslip PDF
   const handleDownloadPayslip = () => {
@@ -119,46 +131,236 @@ const SalaryDetails = () => {
     doc.save("Payslip.pdf");
   };
 
+  // inside return()
   return (
-    <Card sx={{ maxWidth: 800, margin: "20px auto", borderRadius: "12px", boxShadow: 3 }}>
-      <CardContent>
-        <Typography variant="h5" gutterBottom>💼 Employee Payslip</Typography>
+    <div>
+      {/* Step 1: Show form */}
+      <Box component="form" onSubmit={handleSubmit} p={2}>
+        <Grid container spacing={2} alignItems="center">
+          {/* Employee ID */}
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="Employee ID"
+              name="employeeId"
+              value={formData.employeeId}
+              onChange={handleChange}
+              required
+            />
+          </Grid>
 
-        <Grid container spacing={2}>
-          <Grid item xs={6}><Typography><b>Employee:</b> {employeeName}</Typography></Grid>
-          <Grid item xs={6}><Typography><b>Job Title:</b> {jobTitle}</Typography></Grid>
-          <Grid item xs={6}><Typography><b>Joining Date:</b> {dateOfJoining}</Typography></Grid>
-          <Grid item xs={6}><Typography><b>Pay Period:</b> {payPeriod}</Typography></Grid>
-          <Grid item xs={6}><Typography><b>Pay Date:</b> {payDate}</Typography></Grid>
+          {/* Month - wider */}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Month"
+              name="month"
+              value={formData.month}
+              onChange={handleChange}
+              required
+              sx={{ minWidth: 100 }}
+            >
+              {[...Array(12)].map((_, index) => {
+                const monthNumber = index + 1;
+                return (
+                  <MenuItem key={monthNumber} value={monthNumber}>
+                    {monthNumber.toString().padStart(2, "0")}
+                  </MenuItem>
+                );
+              })}
+            </TextField>
+          </Grid>
+
+          {/* Year */}
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="Year"
+              name="year"
+              type="number"
+              value={formData.year}
+              onChange={handleChange}
+              required
+              inputProps={{ min: 2000, max: 2100 }}
+            />
+          </Grid>
+
+          {/* Submit Button */}
+          <Grid item xs={12}>
+            <Button type="submit" variant="contained" color="primary">
+              Get Payslip
+            </Button>
+          </Grid>
         </Grid>
+      </Box>
 
-        <Typography variant="h6" sx={{ mt: 3 }}>Earnings</Typography>
-        <Typography>Basic: ₹{basic}</Typography>
-        <Typography>HRA: ₹{hra}</Typography>
-        <Typography>CCA: ₹{cca}</Typography>
-        <Typography>Conveyance: ₹{conveyance}</Typography>
-        <Typography>Fixed Allowance: ₹{allowance}</Typography>
+      {/* Step 2: Loading message */}
+      {loading && (
+        <Typography align="center" sx={{ mt: 2 }}>
+          Loading salary details...
+        </Typography>
+      )}
 
-        <Typography variant="h6" sx={{ mt: 3 }}>Deductions</Typography>
-        <Typography>EPF Contribution: ₹{epf}</Typography>
+      {/* Show error if API failed */}
+      {error && !loading && (
+        <Typography align="center" sx={{ mt: 2, color: "red" }}>
+          {error}
+        </Typography>
+      )}
 
-        <Typography variant="h6" sx={{ mt: 3 }}>Summary</Typography>
-        <Typography>Gross Earning: ₹{grossEarning}</Typography>
-        <Typography>Total Deductions: ₹{epf}</Typography>
-        <Typography variant="h6">Net Pay: ₹{netPay}</Typography>
-        <Typography>Paid Days: {paidDays} | LOP Days: {lopDays}</Typography>
+      {/* Show Payslip only after API success */}
+      {salaryData && !loading && (
+        <Card sx={{ maxWidth: 800, margin: "20px auto", borderRadius: "12px", boxShadow: 3 }}>
+          <CardContent>
+            <Typography variant="h5" className="fw-bold">
+              Lunovian Technologies Pvt Ltd
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              #1008, 10th Floor, DSL ABACUS IT PARK, Uppal, Hyderabad, TS 500039
+            </Typography>
 
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ marginTop: 3 }}
-          onClick={handleDownloadPayslip}
-        >
-          📥 Download Payslip
-        </Button>
-      </CardContent>
-    </Card>
+            {/* Title */}
+            <Typography variant="h6" align="center" className="mt-3 fw-bold">
+              Payslip for the month of {salaryData.month}, {salaryData.year}
+            </Typography>
+
+            {/* Employee Info + Net Pay */}
+            <Grid container spacing={3} className="mt-3">
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" className="fw-bold mb-2">
+                      Pay Summary
+                    </Typography>
+                    <Typography variant="body2">
+                      Employee name: <b>{salaryData.employeeName}</b>
+                    </Typography>
+                    <Typography variant="body2">
+                      Job title: {salaryData.jobTitle}
+                    </Typography>
+                    <Typography variant="body2">
+                      Date of joining: {salaryData.dateOfJoining}
+                    </Typography>
+                    <Typography variant="body2">
+                      Pay period: {salaryData.payPeriod}
+                    </Typography>
+                    <Typography variant="body2">
+                      Pay date: {salaryData.payDate}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined" className="bg-light text-center">
+                  <CardContent>
+                    <Typography variant="subtitle1" className="fw-bold">
+                      Employee Net Pay
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      color="success.main"
+                      className="fw-bold"
+                    >
+                      ₹{salaryData.netPay}
+                    </Typography>
+                    <Typography variant="body2">
+                      Paid days: {salaryData.paidDays} | LOP days:{" "}
+                      {salaryData.lopDays}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* Earnings + Deductions Table */}
+            <Table className="table-bordered mt-4">
+              <TableHead className="table-light">
+                <TableRow>
+                  <TableCell className="fw-bold">Earnings</TableCell>
+                  <TableCell className="fw-bold">Amount</TableCell>
+                  <TableCell className="fw-bold">Deductions</TableCell>
+                  <TableCell className="fw-bold">Amount</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Basic</TableCell>
+                  <TableCell>₹{salaryData.basicSalary}</TableCell>
+                  <TableCell>EPF Contribution</TableCell>
+                  <TableCell>₹{salaryData.epf}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>House rent allowance</TableCell>
+                  <TableCell>₹{salaryData.hra}</TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>City compensatory allowance</TableCell>
+                  <TableCell>₹{salaryData.cca}</TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Conveyance allowance</TableCell>
+                  <TableCell>₹{salaryData.conveyance}</TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Fixed allowance</TableCell>
+                  <TableCell>₹{salaryData.allowance}</TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="fw-bold">Gross earning</TableCell>
+                  <TableCell className="fw-bold">
+                    ₹{salaryData.grossEarning}
+                  </TableCell>
+                  <TableCell className="fw-bold">Total deductions</TableCell>
+                  <TableCell className="fw-bold">₹{salaryData.epf}</TableCell>
+                </TableRow>
+                <TableRow className="table-warning">
+                  <TableCell colSpan={4} className="fw-bold">
+                    Total Net Payable ₹{salaryData.netPay} (
+                    {salaryData.netPayWords})
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+
+            <Divider className="my-3" />
+
+            {/* Footer Note */}
+            <Typography
+              variant="caption"
+              align="center"
+              display="block"
+              color="textSecondary"
+            >
+              -- This is a system generated payslip, hence the signature is not
+              required. --
+            </Typography>
+
+            {/* Download Button */}
+            <Box className="text-center mt-3">
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleDownloadPayslip}
+              >
+                📥 Download Payslip
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
+
 };
 
 export default SalaryDetails;

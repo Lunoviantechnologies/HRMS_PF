@@ -1,5 +1,3 @@
-
-
 /* admin login page */
 
 .adminLoginPage {
@@ -73,6 +71,12 @@
   color: white;
 }
 
+/* EmployeeList */
 
+.tableHeader_employeeList {
+  background-color: #0385acff !important;
+  color: white !important;
+  text-align: center;
+}
 
 

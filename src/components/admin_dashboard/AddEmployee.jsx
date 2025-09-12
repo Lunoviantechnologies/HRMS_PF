@@ -11,7 +11,7 @@ import FaceCapture from "./FaceCapture";
 import { useFormikContext } from "formik";
 
 const VisuallyHiddenInput = styled("input")({
-    clip: "rect(0 0 0 0)", 
+    clip: "rect(0 0 0 0)",
     clipPath: "inset(50%)",
     height: 1,
     overflow: "hidden",
@@ -33,10 +33,8 @@ const validationSchemas = [
     }),
     // Step 1: Personal Details
     Yup.object({
-        panNumber: Yup.string().required("PAN number is required"),
-        aadharNumber: Yup.string()
-            .matches(/^[0-9]{12}$/, "Must be 12 digits")
-            .required("Aadhar is required"),
+        panNumber: Yup.string().matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "PAN must be exactly 10 characters (e.g., ABCDE1234F)").required("PAN Number is required"),
+        aadharNumber: Yup.string().matches(/^[0-9]{12}$/, "Must be 12 digits").required("Aadhar is required"),
     }),
     // Step 2: Family Details
     Yup.object({
@@ -45,34 +43,50 @@ const validationSchemas = [
     }),
     // Step 3: Experience
     Yup.object({
-        previousCompanyName: Yup.string().required("Company name required"),
-        department: Yup.string().required("Department required"),
-        designation: Yup.string().required("Designation required"),
-    }),
+        previousCompanyName: Yup.string()
+            .matches(/^[A-Za-z0-9\s&.,-]+$/, "Company name can only contain letters, numbers, and common symbols")
+            .required("Company name is required"),
+        department: Yup.string()
+            .matches(/^[A-Za-z\s]+$/, "Department must contain only letters").required("Department is required"),
+        designation: Yup.string()
+            .matches(/^[A-Za-z\s]+$/, "Designation must contain only letters").required("Designation is required"),
+        previousExperience: Yup.number()
+            .typeError("Experience must be a number").positive("Experience must be greater than 0").max(50, "Experience seems too high")
+            .required("Experience is required"),
+    })
+    ,
     // Step 4: Education
     Yup.object({
         higherQualification: Yup.string().required("Qualification required"),
     }),
     // Step 5: Bank Details
     Yup.object({
-        bankName: Yup.string().required("Bank name required"),
-        accountNo: Yup.string().required("Account number required"),
-        ifscCode: Yup.string().required("IFSC required"),
-    }),
+        bankName: Yup.string()
+            .matches(/^[A-Za-z\s]+$/, "Bank name must contain only letters").required("Bank name is required"),
+        accountNo: Yup.string()
+            .matches(/^[0-9]{9,18}$/, "Account number must be 9–18 digits").required("Account number is required"),
+        ifscCode: Yup.string()
+            .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC code format").required("IFSC code is required"),
+    })
+    ,
     // Step 6: Documents (optional → no validation)
     Yup.object({}),
     // Step 7: Salary
     Yup.object({
-        basicEmployeeSalary: Yup.number()
-            .positive("Must be positive")
-            .required("Salary is required"),
+        basicEmployeeSalary: Yup.number().positive("Must be positive").required("Salary is required"),
     }),
     // Step 8: Credentials
     Yup.object({
         password: Yup.string()
-            .min(6, "At least 6 characters")
+            .min(6, "Password must be at least 6 characters")
+            .max(20, "Password must not exceed 20 characters")
+            .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+            .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+            .matches(/[0-9]/, "Password must contain at least one number")
+            .matches(/[@$!%*?&]/, "Password must contain at least one special character (@, $, !, %, *, ?, &)")
             .required("Password is required"),
-    }),
+    })
+    ,
 ];
 
 // 🔹 Initial Values
@@ -179,7 +193,7 @@ const AddEmployee = () => {
             if (values.document2) formDataToSend.append("document2", values.document2);
             if (values.document3) formDataToSend.append("document3", values.document3);
 
-            const res = await axios.post(`${backendIP}/api/employees/register`, formDataToSend, {
+            const res = await axios.post(`${backendIP}/HRMS/api/employees/register`, formDataToSend, {
                 headers: {
                     Authorization: token,
                     "Content-Type": "multipart/form-data",

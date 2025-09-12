@@ -26,25 +26,30 @@ export default function Profile() {
     setOpen(false);
 
     try {
-      // Convert your state into FormData
+      const cleanFormData = { ...formData };
+
+      // Remove fields not intended for update
+      delete cleanFormData.attendances;
+      delete cleanFormData.leaveRequests;
+
       const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        formDataToSend.append(key, formData[key]);
+      Object.keys(cleanFormData).forEach((key) => {
+        formDataToSend.append(key, cleanFormData[key]);
       });
 
       const updatedEmpProfile = await axios.put(
-        `${backendIP}/HRMS/api/employees/updateEmpBasicInfo/${user.sub}`,
+        `${backendIP}/api/employees/updateEmp/${user.sub}`,
         formDataToSend,
         {
           headers: {
-            Authorization: token,
+            // Authorization: token,
             "Content-Type": "multipart/form-data",
           },
         }
       );
 
       if (updatedEmpProfile.status === 200) {
-        alert("Profile updated");
+        alert("Profile updated successfully");
       } else {
         alert("Failed to update profile");
       }
@@ -56,7 +61,7 @@ export default function Profile() {
 
   useEffect(() => {
     axios
-      .get(`${backendIP}/HRMS/api/employees/findByEmp/${user.sub}`, {
+      .get(`${backendIP}/api/employees/findByEmp/${user.sub}`, {
         headers: {
           Authorization: token,
         },
@@ -398,14 +403,14 @@ export default function Profile() {
           <Grid container spacing={2}>
             {[
               { label: "Profile Photo", name: "profilePhoto" },
-              { label: "First Name", name: "firstName" },
-              { label: "Last Name", name: "lastName" },
+              { label: "First Name", name: "firstName", disabled: true },
+              { label: "Last Name", name: "lastName", disabled: true },
               { label: "Work Email", name: "workEmail", disabled: true },
               { label: "Personal Email", name: "emailId", disabled: true },
-              { label: "Phone", name: "contactNumber1" },
-              { label: "Department", name: "department" },
-              { label: "Role", name: "role" },
-              { label: "Date of Birth", name: "dateOfBirth" },
+              { label: "Phone", name: "contactNumber1", disabled: true },
+              { label: "Department", name: "department", disabled: true },
+              { label: "Role", name: "role", disabled: true },
+              { label: "Date of Birth", name: "dateOfBirth", disabled: true },
               { label: "Nationality", name: "nationality" },
               { label: "Gender", name: "gender" },
               { label: "House Number", name: "houseNo" },
@@ -414,13 +419,13 @@ export default function Profile() {
               { label: "Father's Name", name: "fatherName" },
               { label: "Mother's Name", name: "motherName" },
               { label: "Marital Status", name: "maritalStatus" },
-              { label: "Aadhar Number", name: "aadharNumber" },
-              { label: "PAN Number", name: "panNumber" },
+              { label: "Aadhar Number", name: "aadharNumber", disabled: true },
+              { label: "PAN Number", name: "panNumber", disabled: true },
               { label: "Passport Number", name: "passportNumber" },
-              { label: "Bank Name", name: "bankName" },
-              { label: "Account Number", name: "accountNo" },
-              { label: "IFSC Code", name: "ifscCode" },
-              { label: "Bank Branch", name: "bankBranch" },
+              { label: "Bank Name", name: "bankName", disabled: true },
+              { label: "Account Number", name: "accountNo", disabled: true },
+              { label: "IFSC Code", name: "ifscCode", disabled: true },
+              { label: "Bank Branch", name: "bankBranch", disabled: true },
             ].map((field) => (
               <Grid item xs={12} sm={6} key={field.name}>
                 {field.name === "profilePhoto" ? (

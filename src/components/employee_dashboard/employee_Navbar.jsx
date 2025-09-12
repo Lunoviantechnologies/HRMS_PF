@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import NotificationMenu from "./Notification"; // ✅ notification dropdown
+import NotificationMenu from "./Notification";
 
 export default function Employee_Navbar() {
   const navigate = useNavigate();
@@ -10,9 +10,7 @@ export default function Employee_Navbar() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/");
-    }
+    if (!user) navigate("/");
   }, [user, navigate]);
 
   const handleLogout = () => logout(navigate);
@@ -28,12 +26,16 @@ export default function Employee_Navbar() {
     >
       <div className="container-fluid">
         {/* Logo + Title */}
-        <a className="navbar-brand d-flex align-items-center" onClick={() => navigate("/employee_dashboard")} style={{ cursor: "pointer" }}>
+        <a
+          className="navbar-brand d-flex align-items-center"
+          onClick={() => navigate("/employee_dashboard")}
+          style={{ cursor: "pointer" }}
+        >
           <img
             src="/lunovianLogo.jpg"
             alt="Lunovian Logo"
             className="me-2"
-            style={{ height: "60px", width: "60px", borderRadius: "50%", cursor: "pointer",}}
+            style={{ height: "60px", width: "60px", borderRadius: "50%" }}
           />
           <span className="fw-bold">Lunovian Technologies</span>
         </a>
@@ -56,51 +58,42 @@ export default function Employee_Navbar() {
           {/* Center Nav Links */}
           <ul className="navbar-nav mx-auto mb-2 mb-md-0">
             <li className="nav-item">
-              <button
-                className="btn nav-link text-white"
-                onClick={handleLeaveRequest}
-              >
+              <button className="btn nav-link text-white" onClick={handleLeaveRequest}>
                 Leave Request
               </button>
             </li>
             <li className="nav-item">
-              <button
-                className="btn nav-link text-white"
-                onClick={handleAttendence}
-              >
+              <button className="btn nav-link text-white" onClick={handleAttendence}>
                 Attendance
               </button>
             </li>
             <li className="nav-item">
-              <button
-                className="btn nav-link text-white"
-                onClick={handleSalary}
-              >
+              <button className="btn nav-link text-white" onClick={handleSalary}>
                 Salary Details
               </button>
             </li>
           </ul>
 
-          {/* Right side (Notifications + Profile Dropdown) 
-              - shows inline on desktop
-              - stacked under menu on mobile */}
+          {/* Right Side */}
           <ul className="navbar-nav ms-auto">
-            <li className="nav-item text-warning">
+            {/* Desktop: show inline */}
+            <li className="nav-item text-warning d-none d-md-flex align-items-center me-3">
               <NotificationMenu
                 anchorEl={anchorEl}
                 handleClose={handleNotificationClose}
                 notifications={notifications}
               />
             </li>
-            <li className="nav-item dropdown">
+
+            <li className="nav-item dropdown d-none d-md-flex">
               <button
-                className="btn btn-dark dropdown-toggle w-100"
+                className="btn btn-dark dropdown-toggle d-flex align-items-center"
                 type="button"
-                id="dropdownMenuButton"
+                id="desktopDropdown"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
-                style={{ display: "flex", alignItems: "center" }}
               >
+                {/* Initials circle always visible */}
                 <span
                   className="bg-light rounded-circle d-flex justify-content-center align-items-center fw-bold text-dark me-2"
                   style={{
@@ -112,16 +105,27 @@ export default function Employee_Navbar() {
                 >
                   {user?.sub?.[0]?.toUpperCase()}
                 </span>
-                <span>{user?.sub}</span>
+
+                {/* Name: hidden on tablet & mobile */}
+                <span className="d-none d-lg-inline">{user?.sub}</span>
               </button>
-              <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+              <ul
+                className="dropdown-menu dropdown-menu-end"
+                aria-labelledby="desktopDropdown"
+              >
                 <li>
-                  <button className="dropdown-item" onClick={() => navigate("/employee_dashboard/profile")}>
+                  <button
+                    className="dropdown-item text-warning"
+                    onClick={() => navigate("/employee_dashboard/profile")}
+                  >
                     Profile
                   </button>
                 </li>
                 <li>
-                  <button className="dropdown-item" onClick={() => navigate("/employee_dashboard/settings")}>
+                  <button
+                    className="dropdown-item text-warning"
+                    onClick={() => navigate("/employee_dashboard/settings")}
+                  >
                     Settings
                   </button>
                 </li>
@@ -134,6 +138,42 @@ export default function Employee_Navbar() {
                   </button>
                 </li>
               </ul>
+            </li>
+
+            {/* Mobile: show inside collapse */}
+            <li className="nav-item d-flex d-md-none flex-column mt-2">
+              <NotificationMenu
+                anchorEl={anchorEl}
+                handleClose={handleNotificationClose}
+                notifications={notifications}
+              />
+              <div className="mt-2 border-top pt-2">
+                <button
+                  className="btn btn-dark dropdown-toggle w-100"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#mobileProfileMenu"
+                >
+                  {user?.sub}
+                </button>
+                <div className="collapse mt-2" id="mobileProfileMenu">
+                  <button
+                    className="dropdown-item text-warning"
+                    onClick={() => navigate("/employee_dashboard/profile")}
+                  >
+                    Profile
+                  </button>
+                  <button
+                    className="dropdown-item text-warning"
+                    onClick={() => navigate("/employee_dashboard/settings")}
+                  >
+                    Settings
+                  </button>
+                  <button className="dropdown-item text-danger" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              </div>
             </li>
           </ul>
         </div>

@@ -1,16 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Admin_Notify from './admin_dashboard/admin_account/Admin_Notify';
 
 export default function Navbar() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [notifications, setNotifications] = useState([]);
 
     useEffect(() => {
         if (!user) {
             navigate('/');
         }
     }, [user, navigate]);
+
+    const handleNotificationClose = () => setAnchorEl(null);
 
     const handleLogout = () => {
         logout(navigate);
@@ -41,7 +46,7 @@ export default function Navbar() {
                         alt="lunovianLogo"
                         className="me-2"
                         onClick={() => navigate('/dashboard')}
-                        style={{ height: '60px', width: '60px', borderRadius: '50%', cursor: 'pointer',}}
+                        style={{ height: '60px', width: '60px', borderRadius: '50%', cursor: 'pointer', }}
                     />
 
                     {/* Brand Name (hidden on small screens) */}
@@ -52,8 +57,14 @@ export default function Navbar() {
 
                 <div className="d-flex align-items-center flex-nowrap">
                     {/* Notification Icon */}
-                    <div className="text-white me-2">
-                        <i className="bi bi-bell fs-5 text-warning"></i>
+                    <div className="text-warning me-2">
+                        <i>
+                            <Admin_Notify
+                                anchorEl={anchorEl}
+                                handleClose={handleNotificationClose}
+                                notifications={notifications}
+                            />
+                        </i>
                     </div>
 
                     {/* User Dropdown */}
