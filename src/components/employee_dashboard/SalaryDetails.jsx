@@ -12,93 +12,106 @@ const SalaryDetails = () => {
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     employeeId: "",
-    month: "",
-    year: "",
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
   });
 
+  // Fixed values
+  const EPF_EMPLOYEE = 1800;
+  const EPF_EMPLOYER = 1800;
+  const PROFESSIONAL_TAX = 200;
+
+  // Handle input
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // Fetch salary details
+  const fetchSalary = async (employeeId, month, year) => {
+    if (!employeeId || !month || !year) {
+      setError("Please provide Employee ID, Month, and Year");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    const { employeeId, month, year } = formData;
+    try {
+      const res = await axios.get(
+        `${backendIP}/api/payslip/${employeeId}?month=${month}&year=${year}`
+      );
 
-    axios
-      .get(`${backendIP}/api/payslip/${employeeId}?month=${month}&year=${year}`, {
-        // headers: { Authorization: token }
-      })
-      .then((res) => {
-        setSalaryData(res.data);
-        console.log("fetching salary details:", res.data);
-      })
-      .catch((err) => {
-        console.error("Error fetching salary details:", err);
-        setError("Failed to load salary details");
-        setSalaryData(null);
-      })
-      .finally(() => setLoading(false));
+      // ✅ Ensure defaults so no field is empty
+      setSalaryData({
+        ...res.data,
+        hra: res.data.hra || 10000,
+        cca: res.data.cca || 2500,
+        conveyance: res.data.conveyance || 2500,
+        allowance: res.data.allowance || 0,
+        epfEmployee: EPF_EMPLOYEE,
+        epfEmployer: EPF_EMPLOYER,
+        profTax: PROFESSIONAL_TAX,
+      });
+    } catch (err) {
+      console.error("Error fetching salary details:", err);
+      setError("No salary details found for the given inputs");
+      setSalaryData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Example backend response (make sure backend matches this shape)
-  const defaultData = {
-    employeeName: "Employee",
-    jobTitle: "Software Engineer",
-    dateOfJoining: "2025-01-01",
-    payPeriod: "May 1, 2025 to May 31, 2025",
-    payDate: "June 6, 2025",
-    basic: 15000,
-    hra: 5250,
-    cca: 2500,
-    conveyance: 2500,
-    allowance: 2800,
-    epf: 1800,
-    grossEarning: 28050,
-    netPay: 26250,
-    paidDays: 31,
-    lopDays: 0,
+  // On form submit
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    fetchSalary(formData.employeeId, formData.month, formData.year);
   };
 
-  const {
-    employeeName,
-    jobTitle,
-    dateOfJoining,
-    payPeriod,
-    payDate,
-    basic,
-    hra,
-    cca,
-    conveyance,
-    allowance,
-    epf,
-    grossEarning,
-    netPay,
-    paidDays,
-    lopDays,
-  } = salaryData || defaultData;
+  // ✅ Calculations
+  const grossEarning =
+    (salaryData?.basicSalary || 0) +
+    (salaryData?.hra || 0) +
+    (salaryData?.cca || 0) +
+    (salaryData?.conveyance || 0) +
+    (salaryData?.allowance || 0);
 
-  // 📄 Generate Payslip PDF
+  const totalDeductions =
+    (salaryData?.epfEmployee || 0) + (salaryData?.profTax || 0) + (salaryData?.epfEmployer || 0);
+
+  const netPay = salaryData?.basicSalary ? parseFloat(salaryData.basicSalary).toFixed(2) : 0;
+
+  const yearlyGross = grossEarning ;
+  const yearlyNet = netPay ;
+  const ctc = yearlyNet + (salaryData?.epfEmployer || 0) ;
+
+  // 📄 Download Payslip PDF
   const handleDownloadPayslip = () => {
+    if (!salaryData) return;
+
     const doc = new jsPDF();
 
     doc.setFontSize(16);
     doc.text("Lunovian Technologies Pvt Ltd", 20, 20);
     doc.setFontSize(11);
-    doc.text("#1008, 10th Floor, DSL ABACUS IT PARK, Uppal, Hyderabad, TS 500039", 20, 28);
+    doc.text(
+      "#1008, 10th Floor, DSL ABACUS IT PARK, Uppal, Hyderabad, TS 500039",
+      20,
+      28
+    );
 
     doc.setFontSize(14);
-    doc.text("Payslip for the Month May 2025", 70, 40);
+    doc.text(
+      `Payslip for the Month ${salaryData.month}/${salaryData.year}`,
+      70,
+      40
+    );
 
-    // Employee Info
     doc.setFontSize(11);
-    doc.text(`Employee Name: ${employeeName}`, 20, 55);
-    doc.text(`Job Title: ${jobTitle}`, 20, 65);
-    doc.text(`Date of Joining: ${dateOfJoining}`, 20, 75);
-    doc.text(`Pay Period: ${payPeriod}`, 20, 85);
-    doc.text(`Pay Date: ${payDate}`, 20, 95);
+    doc.text(`Employee Name: ${salaryData.employeeName || ""}`, 20, 55);
+    doc.text(`Job Title: ${salaryData.jobTitle || ""}`, 20, 65);
+    doc.text(`Date of Joining: ${salaryData.dateOfJoining || ""}`, 20, 75);
+    doc.text(`Pay Period: ${salaryData.payPeriod || ""}`, 20, 85);
+    doc.text(`Pay Date: ${salaryData.payDate || ""}`, 20, 95);
 
     // Earnings & Deductions
     doc.setFontSize(12);
@@ -106,27 +119,31 @@ const SalaryDetails = () => {
     doc.text("Deductions", 120, 115);
 
     doc.setFontSize(11);
-    doc.text(`Basic: ₹${basic}`, 20, 125);
-    doc.text(`House Rent Allowance: ₹${hra}`, 20, 135);
-    doc.text(`City Compensatory Allowance: ₹${cca}`, 20, 145);
-    doc.text(`Conveyance Allowance: ₹${conveyance}`, 20, 155);
-    doc.text(`Fixed Allowance: ₹${allowance}`, 20, 165);
+    doc.text(`Basic: ₹${salaryData.basicSalary || 0}`, 20, 125);
+    doc.text(`House Rent Allowance: ₹${salaryData.hra}`, 20, 135);
+    doc.text(`City Compensatory Allowance: ₹${salaryData.cca}`, 20, 145);
+    doc.text(`Conveyance Allowance: ₹${salaryData.conveyance}`, 20, 155);
+    doc.text(`Fixed Allowance: ₹${salaryData.allowance}`, 20, 165);
 
-    doc.text(`EPF Contribution: ₹${epf}`, 120, 125);
+    doc.text(`EPF (Employee): ₹${EPF_EMPLOYEE}`, 120, 125);
+    doc.text(`Professional Tax: ₹${PROFESSIONAL_TAX}`, 120, 135);
+    doc.text(`EPF (Employer): ₹${EPF_EMPLOYER}`, 120, 145);
 
-    // Summary
     doc.setFontSize(12);
-    doc.text(`Gross Earning: ₹${grossEarning}`, 20, 185);
-    doc.text(`Total Deductions: ₹${epf}`, 120, 185);
+    doc.text(`Gross Earning (Yearly): ₹${salaryData.basicSalary}`, 20, 185);
+    doc.text(`Total Deductions: ₹${totalDeductions}`, 120, 185);
+    doc.text(`Yearly Net: ₹${((((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX)*12}`, 20, 195);
+    doc.text(`CTC: ₹${salaryData.basicSalary}`, 120, 195);
 
     doc.setFontSize(14);
-    doc.text(`Net Pay: ₹${netPay}`, 20, 205);
-
-    doc.setFontSize(11);
-    doc.text(`Paid Days: ${paidDays} | LOP Days: ${lopDays}`, 20, 220);
+    doc.text(`Net Pay: ₹${(((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX}}`, 20, 220);
 
     doc.setFontSize(9);
-    doc.text("This is a system generated payslip, hence the signature is not required.", 20, 240);
+    doc.text(
+      "This is a system generated payslip, hence the signature is not required.",
+      20,
+      240
+    );
 
     doc.save("Payslip.pdf");
   };
@@ -134,10 +151,9 @@ const SalaryDetails = () => {
   // inside return()
   return (
     <div>
-      {/* Step 1: Show form */}
+      {/* Search Form */}
       <Box component="form" onSubmit={handleSubmit} p={2}>
         <Grid container spacing={2} alignItems="center">
-          {/* Employee ID */}
           <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
@@ -149,7 +165,6 @@ const SalaryDetails = () => {
             />
           </Grid>
 
-          {/* Month - wider */}
           <Grid item xs={12} sm={6}>
             <TextField
               select
@@ -159,7 +174,6 @@ const SalaryDetails = () => {
               value={formData.month}
               onChange={handleChange}
               required
-              sx={{ minWidth: 100 }}
             >
               {[...Array(12)].map((_, index) => {
                 const monthNumber = index + 1;
@@ -172,7 +186,6 @@ const SalaryDetails = () => {
             </TextField>
           </Grid>
 
-          {/* Year */}
           <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
@@ -186,7 +199,6 @@ const SalaryDetails = () => {
             />
           </Grid>
 
-          {/* Submit Button */}
           <Grid item xs={12}>
             <Button type="submit" variant="contained" color="primary">
               Get Payslip
@@ -195,23 +207,30 @@ const SalaryDetails = () => {
         </Grid>
       </Box>
 
-      {/* Step 2: Loading message */}
+      {/* Loader */}
       {loading && (
         <Typography align="center" sx={{ mt: 2 }}>
           Loading salary details...
         </Typography>
       )}
 
-      {/* Show error if API failed */}
+      {/* Error */}
       {error && !loading && (
         <Typography align="center" sx={{ mt: 2, color: "red" }}>
           {error}
         </Typography>
       )}
 
-      {/* Show Payslip only after API success */}
+      {/* Payslip Card */}
       {salaryData && !loading && (
-        <Card sx={{ maxWidth: 800, margin: "20px auto", borderRadius: "12px", boxShadow: 3 }}>
+        <Card
+          sx={{
+            maxWidth: 800,
+            margin: "20px auto",
+            borderRadius: "12px",
+            boxShadow: 3,
+          }}
+        >
           <CardContent>
             <Typography variant="h5" className="fw-bold">
               Lunovian Technologies Pvt Ltd
@@ -220,12 +239,10 @@ const SalaryDetails = () => {
               #1008, 10th Floor, DSL ABACUS IT PARK, Uppal, Hyderabad, TS 500039
             </Typography>
 
-            {/* Title */}
             <Typography variant="h6" align="center" className="mt-3 fw-bold">
-              Payslip for the month of {salaryData.month}, {salaryData.year}
+              Payslip for {salaryData.month}/{salaryData.year}
             </Typography>
 
-            {/* Employee Info + Net Pay */}
             <Grid container spacing={3} className="mt-3">
               <Grid item xs={12} md={6}>
                 <Card variant="outlined">
@@ -263,7 +280,7 @@ const SalaryDetails = () => {
                       color="success.main"
                       className="fw-bold"
                     >
-                      ₹{salaryData.netPay}
+                      ₹{(((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX}
                     </Typography>
                     <Typography variant="body2">
                       Paid days: {salaryData.paidDays} | LOP days:{" "}
@@ -274,34 +291,34 @@ const SalaryDetails = () => {
               </Grid>
             </Grid>
 
-            {/* Earnings + Deductions Table */}
+            {/* Earnings & Deductions */}
             <Table className="table-bordered mt-4">
               <TableHead className="table-light">
                 <TableRow>
                   <TableCell className="fw-bold">Earnings</TableCell>
-                  <TableCell className="fw-bold">Amount</TableCell>
-                  <TableCell className="fw-bold">Deductions</TableCell>
+                  <TableCell className="fw-bold">MonthlyAmount</TableCell>
+                  <TableCell className="fw-bold">MonthlyDeductions</TableCell>
                   <TableCell className="fw-bold">Amount</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 <TableRow>
                   <TableCell>Basic</TableCell>
-                  <TableCell>₹{salaryData.basicSalary}</TableCell>
-                  <TableCell>EPF Contribution</TableCell>
-                  <TableCell>₹{salaryData.epf}</TableCell>
+                  <TableCell>₹{(salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance}</TableCell>
+                  <TableCell>EPF (Employee)</TableCell>
+                  <TableCell>₹{EPF_EMPLOYEE}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>House rent allowance</TableCell>
                   <TableCell>₹{salaryData.hra}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
+                  <TableCell>Professional Tax</TableCell>
+                  <TableCell>₹{PROFESSIONAL_TAX}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>City compensatory allowance</TableCell>
                   <TableCell>₹{salaryData.cca}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
+                  <TableCell>EPF (Employer)</TableCell>
+                  <TableCell>₹{EPF_EMPLOYER}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Conveyance allowance</TableCell>
@@ -315,26 +332,33 @@ const SalaryDetails = () => {
                   <TableCell></TableCell>
                   <TableCell></TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell className="fw-bold">Gross earning</TableCell>
-                  <TableCell className="fw-bold">
-                    ₹{salaryData.grossEarning}
+                <TableRow className="table-warning">
+                  <TableCell colSpan={4} className="fw-bold">
+                    Total Net Payable ₹{(((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)}
                   </TableCell>
-                  <TableCell className="fw-bold">Total deductions</TableCell>
-                  <TableCell className="fw-bold">₹{salaryData.epf}</TableCell>
                 </TableRow>
                 <TableRow className="table-warning">
                   <TableCell colSpan={4} className="fw-bold">
-                    Total Net Payable ₹{salaryData.netPay} (
-                    {salaryData.netPayWords})
+                    Total Deduction Payable ₹{(EPF_EMPLOYER +EPF_EMPLOYER+PROFESSIONAL_TAX)*12}
                   </TableCell>
+                </TableRow>
+                <TableRow className="table-info">
+                  <TableCell className="fw-bold">Yearly Gross</TableCell>
+                  <TableCell className="fw-bold">₹{salaryData.basicSalary} </TableCell>
+                  <TableCell className="fw-bold">Yearly Net</TableCell>
+                  <TableCell className="fw-bold">₹{((((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX)*12}</TableCell>
+                </TableRow>
+                <TableRow className="table-success">
+                  <TableCell className="fw-bold">CTC</TableCell>
+                  <TableCell className="fw-bold">₹{salaryData.basicSalary}</TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableBody>
             </Table>
 
             <Divider className="my-3" />
 
-            {/* Footer Note */}
             <Typography
               variant="caption"
               align="center"
@@ -345,7 +369,6 @@ const SalaryDetails = () => {
               required. --
             </Typography>
 
-            {/* Download Button */}
             <Box className="text-center mt-3">
               <Button
                 variant="contained"
