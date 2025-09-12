@@ -1,3 +1,4 @@
+// src/components/attendance/AttendancePunch.jsx
 import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
@@ -5,19 +6,19 @@ import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
-  const { token, user, logout } = useAuth();
+  const { token, user } = useAuth();
   const webcamRef = useRef(null);
 
   const [capturedImage, setCapturedImage] = useState(null);
   const [message, setMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [location, setLocation] = useState("");
-  const [punchedIn, setPunchedIn] = useState(false);
+
   const [punchInTime, setPunchInTime] = useState(null);
+  const [punchOutTime, setPunchOutTime] = useState(null);
   const [workingHours, setWorkingHours] = useState("00:00:00");
 
-  // Unique key for this employee
-  const punchKey = `punchIn_${user?.sub}`;
+  const punchKey = `punch_${user?.sub}`;
 
   // ✅ Live Clock
   useEffect(() => {
@@ -25,35 +26,24 @@ const AttendancePunch = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ Restore punch-in state on refresh
+  // ✅ Restore state
   useEffect(() => {
     if (!user?.sub) return;
     const storedData = localStorage.getItem(punchKey);
     if (storedData) {
-      const { image, time } = JSON.parse(storedData);
-      const storedDate = new Date(time);
-
-      // restore only if it's still the same day
-      const today = new Date();
-      if (
-        storedDate.getFullYear() === today.getFullYear() &&
-        storedDate.getMonth() === today.getMonth() &&
-        storedDate.getDate() === today.getDate()
-      ) {
-        setCapturedImage(image);
-        setPunchInTime(storedDate);
-        setPunchedIn(true);
-      } else {
-        localStorage.removeItem(punchKey);
-      }
+      const { image, inTime, outTime } = JSON.parse(storedData);
+      if (inTime) setPunchInTime(new Date(inTime));
+      if (outTime) setPunchOutTime(new Date(outTime));
+      if (image) setCapturedImage(image);
     }
   }, [user, punchKey]);
 
-  // ✅ Calculate working hours
+  // ✅ Calculate Working Hours
   useEffect(() => {
     if (!punchInTime) return;
     const interval = setInterval(() => {
-      const diffMs = new Date() - new Date(punchInTime);
+      const endTime = punchOutTime ? new Date(punchOutTime) : new Date();
+      const diffMs = endTime - new Date(punchInTime);
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
@@ -64,25 +54,9 @@ const AttendancePunch = () => {
       );
     }, 1000);
     return () => clearInterval(interval);
-  }, [punchInTime]);
+  }, [punchInTime, punchOutTime]);
 
-  // ✅ Auto logout at 6PM
-  useEffect(() => {
-    const checkLogout = setInterval(() => {
-      const now = new Date();
-      if (now.getHours() === 18 && now.getMinutes() === 0) {
-        localStorage.removeItem(punchKey);
-        setPunchedIn(false);
-        setPunchInTime(null);
-        setWorkingHours("00:00:00");
-        setCapturedImage(null);
-        logout();
-      }
-    }, 1000); // check every second for accuracy
-    return () => clearInterval(checkLogout);
-  }, [logout, punchKey]);
-
-  // ✅ Fetch User Location
+  // ✅ Fetch Location
   const fetchLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -122,91 +96,126 @@ const AttendancePunch = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  // ✅ Send to Backend
-  const sendToBackend = async () => {
+  // ✅ Single Punch (backend decides In/Out)
+  const handlePunch = async () => {
     if (!capturedImage) {
       setMessage("⚠ Please capture your face first.");
       return;
     }
-
     try {
       const file = dataURLtoFile(capturedImage, "captured.jpg");
 
       const formData = new FormData();
       formData.append("photo", file);
-      formData.append("email", user.sub); // backend still uses email
+      formData.append("email", user.sub); // 👈 your backend uses email
       formData.append("location", location);
 
-      const res = await axios.post(
-        `${backendIP}/api/attendance/mark`,
-        formData,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
+      const res = await axios.post(`${backendIP}/api/attendance/marks`, formData);
 
-      // ✅ Save punch-in state for this employee
-      const punchTime = new Date();
-      localStorage.setItem(
-        punchKey,
-        JSON.stringify({ image: capturedImage, time: punchTime.toISOString() })
-      );
+      const responseMsg = res.data;
 
-      setPunchInTime(punchTime);
-      setPunchedIn(true);
+      if (responseMsg.includes("Punch-In")) {
+        const inTime = new Date();
+        setPunchInTime(inTime);
+        localStorage.setItem(punchKey, JSON.stringify({ image: capturedImage, inTime }));
+      } else if (responseMsg.includes("Punch-Out")) {
+        const outTime = new Date();
+        setPunchOutTime(outTime);
 
-      setMessage(res.data.message || "✅ Attendance marked!");
-      alert("✅ Attendance marked!");
+        // Reset after 3 seconds
+        setTimeout(() => {
+          setPunchInTime(null);
+          setPunchOutTime(null);
+          setCapturedImage(null);
+          setWorkingHours("00:00:00");
+          localStorage.removeItem(punchKey);
+        }, 3000);
+      }
+
+      setMessage(responseMsg);
     } catch (err) {
-      console.error("❌ Error marking attendance:", err.response?.data || err.message);
       setMessage("❌ Error: " + (err.response?.data || err.message));
     }
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
+    <div
+      className="bg-white rounded shadow-lg"
+      style={{ textAlign: "center", padding: "20px" }}
+    >
       <h2>📌 Attendance Punch</h2>
       <h3>
         {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
       </h3>
 
-      {!punchedIn ? (
-        <>
-          <Webcam
-            audio={false}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            width={320}
-            height={240}
-          />
-          <br />
-          <button onClick={capture} style={{ margin: "10px", padding: "10px" }}>
-            📸 Capture
-          </button>
-          <button
-            onClick={sendToBackend}
-            disabled={!capturedImage}
-            style={{ margin: "10px", padding: "10px" }}
-          >
-            🚀 Punch In
-          </button>
-        </>
-      ) : (
-        <>
-          <h4>✅ Punched In</h4>
-          {capturedImage && (
-            <img src={capturedImage} alt="captured" width={220} />
-          )}
-          <p>👤 Employee: {user?.name || user?.fullName || user?.sub}</p>
-          <p>
-            🕒 Punch In Time:{" "}
-            {punchInTime?.toLocaleDateString()} {punchInTime?.toLocaleTimeString()}
-          </p>
-          <p>⏱️ Working Hours: {workingHours}</p>
-        </>
-      )}
+      <div
+        className="shadow-lg"
+        style={{
+          border: "1px solid #ccc",
+          padding: "15px",
+          borderRadius: "8px",
+          width: "350px",
+          margin: "20px auto",
+        }}
+      >
+        {!punchInTime && (
+          <>
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              width={260}
+              height={200}
+            />
+            <br />
+            <button
+              onClick={capture}
+              className="btn btn-outline-success"
+              style={{ margin: "10px", padding: "8px" }}
+            >
+              📸 Capture
+            </button>
+            <button
+              onClick={handlePunch}
+              className="btn btn-outline-primary"
+              disabled={!capturedImage}
+              style={{ margin: "10px", padding: "8px" }}
+            >
+              🚀 Punch In
+            </button>
+          </>
+        )}
+
+        {punchInTime && !punchOutTime && (
+          <>
+            <p>🕒 In Time: {punchInTime.toLocaleTimeString()}</p>
+            <p>⏱ Live Hours: {workingHours}</p>
+            <button
+              onClick={handlePunch}
+              className="btn btn-outline-danger"
+              style={{ padding: "8px", marginTop: "10px" }}
+            >
+              🔴 Punch Out
+            </button>
+          </>
+        )}
+
+        {punchOutTime && (
+          <>
+            <p>🕒 In: {punchInTime?.toLocaleTimeString()}</p>
+            <p>🕒 Out: {punchOutTime?.toLocaleTimeString()}</p>
+            <p>⏱ Total Hours: {workingHours}</p>
+            {capturedImage && (
+              <img
+                src={capturedImage}
+                alt="punch"
+                width={220}
+                style={{ marginTop: "10px" }}
+              />
+            )}
+          </>
+        )}
+      </div>
 
       <p>📍 {location}</p>
       <p>{message}</p>

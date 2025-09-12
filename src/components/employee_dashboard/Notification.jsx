@@ -34,9 +34,9 @@ export default function NotificationMenu({ userRole, employeeId }) {
       }
 
       const token = localStorage.getItem("token"); 
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // const res = await axios.get(url, {
+      //   headers: { Authorization: `Bearer ${token}` },
+      // });
 
       setNotifications(res.data || []);
     } catch (error) {
