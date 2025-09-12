@@ -7,7 +7,6 @@ import { useAuth } from "../../context/AuthContext";
 
 const AttendancePunch = () => {
   const { token, user } = useAuth();
-  const { token, user } = useAuth();
   const webcamRef = useRef(null);
 
   const [capturedImage, setCapturedImage] = useState(null);
@@ -17,7 +16,6 @@ const AttendancePunch = () => {
 
 
   const [punchInTime, setPunchInTime] = useState(null);
-  const [punchOutTime, setPunchOutTime] = useState(null);
   const [punchOutTime, setPunchOutTime] = useState(null);
   const [workingHours, setWorkingHours] = useState("00:00:00");
 
@@ -38,10 +36,6 @@ const AttendancePunch = () => {
       if (inTime) setPunchInTime(new Date(inTime));
       if (outTime) setPunchOutTime(new Date(outTime));
       if (image) setCapturedImage(image);
-      const { image, inTime, outTime } = JSON.parse(storedData);
-      if (inTime) setPunchInTime(new Date(inTime));
-      if (outTime) setPunchOutTime(new Date(outTime));
-      if (image) setCapturedImage(image);
     }
   }, [user, punchKey]);
 
@@ -49,8 +43,6 @@ const AttendancePunch = () => {
   useEffect(() => {
     if (!punchInTime) return;
     const interval = setInterval(() => {
-      const endTime = punchOutTime ? new Date(punchOutTime) : new Date();
-      const diffMs = endTime - new Date(punchInTime);
       const endTime = punchOutTime ? new Date(punchOutTime) : new Date();
       const diffMs = endTime - new Date(punchInTime);
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -63,7 +55,6 @@ const AttendancePunch = () => {
       );
     }, 1000);
     return () => clearInterval(interval);
-  }, [punchInTime, punchOutTime]);
   }, [punchInTime, punchOutTime]);
 
   // ✅ Fetch Location
