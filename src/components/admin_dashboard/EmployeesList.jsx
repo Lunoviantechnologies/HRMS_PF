@@ -94,7 +94,7 @@ const EmployeesList = () => {
                         <th className="tableHeader_employeeList">Last Name</th>
                         <th className="tableHeader_employeeList">Mobile</th>
                         <th className="tableHeader_employeeList">E-mail</th>
-                        <th className="tableHeader_employeeList">Action</th>
+                        <th className="tableHeader_employeeList">Action</th> 
                     </tr>
                 </thead>
                 <tbody className="text-center">
