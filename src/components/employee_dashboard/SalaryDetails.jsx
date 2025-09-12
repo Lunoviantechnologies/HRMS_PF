@@ -1,26 +1,12 @@
-// src/components/salary/SalaryDetails.jsx
-import React, { useState } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Grid,
-  TextField,
-  MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Divider,
-} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Card, CardContent, Typography, Button, Grid, TextField, MenuItem, Table, TableBody, TableCell, TableHead, TableRow, Divider } from "@mui/material";
 import jsPDF from "jspdf";
 import axios from "axios";
 import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const SalaryDetails = () => {
+  const { token, user } = useAuth();
   const [salaryData, setSalaryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -162,6 +148,7 @@ const SalaryDetails = () => {
     doc.save("Payslip.pdf");
   };
 
+  // inside return()
   return (
     <div>
       {/* Search Form */}
@@ -396,6 +383,7 @@ const SalaryDetails = () => {
       )}
     </div>
   );
+
 };
 
 export default SalaryDetails;

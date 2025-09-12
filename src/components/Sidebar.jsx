@@ -75,6 +75,7 @@ const Sidebar = () => {
           <>
             {navItem("Add Employee", "/dashboard/addEmployee")}
             {navItem("Employees List", "/dashboard/allEmployees")}
+            {navItem("Previous Employees", "/dashboard/previousEmployees")}
           </>
         )}
 

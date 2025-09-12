@@ -21,7 +21,7 @@ const AdminLogin = () => {
         e.preventDefault();
         setLoading(true);
 
-        axios.post(`${backendIP}/login`, auth)
+        axios.post(`${backendIP}/HRMS/login`, auth)
             .then(res => {
                 let token = "";
                 if (typeof res.data === "string") {

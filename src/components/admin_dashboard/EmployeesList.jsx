@@ -24,7 +24,7 @@ const EmployeesList = () => {
     };
 
     useEffect(() => {
-        axios.get(`${backendIP}/api/employees/all`, {
+        axios.get(`${backendIP}/HRMS/api/employees/all`, {
             headers: {
                 Authorization: token
             }
@@ -46,7 +46,7 @@ const EmployeesList = () => {
         const confirmDelete = window.confirm(`Are you sure you want to delete ${employee.firstName}?`);
         if (!confirmDelete) return;
 
-        axios.delete(`${backendIP}/api/employees/delete/${employee.id}`, {
+        axios.delete(`${backendIP}/HRMS/api/employees/delete/${employee.id}`, {
             headers: {
                 Authorization: token
             }
@@ -86,15 +86,15 @@ const EmployeesList = () => {
                 <Button variant="primary" onClick={handleAddEmployee}>Add New Employee</Button>
             </div>
 
-            <Table bordered hover responsive>
-                <thead className="table-success text-center">
+            <Table bordered hover responsive className="shadow-sm">
+                <thead>
                     <tr>
-                        <th>Thumbnail</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Mobile</th>
-                        <th>E-mail</th>
-                        <th>Action</th>
+                        <th className="tableHeader_employeeList">Thumbnail</th>
+                        <th className="tableHeader_employeeList">First Name</th>
+                        <th className="tableHeader_employeeList">Last Name</th>
+                        <th className="tableHeader_employeeList">Mobile</th>
+                        <th className="tableHeader_employeeList">E-mail</th>
+                        <th className="tableHeader_employeeList">Action</th>
                     </tr>
                 </thead>
                 <tbody className="text-center">

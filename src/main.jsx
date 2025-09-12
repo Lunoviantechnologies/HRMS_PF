@@ -22,6 +22,7 @@ import Profile from './components/employee_dashboard/Profile.jsx';
 import Settings from './components/employee_dashboard/Settings.jsx';
 import SalaryDetails from './components/employee_dashboard/SalaryDetails.jsx';
 import EditAdminProfile from './components/admin_dashboard/admin_account/EditAdminProfile.jsx';
+import PreviousEmployees from './components/admin_dashboard/PreviousEmployees.jsx';
 
 const router = createBrowserRouter([
     {
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
             {
                 path: 'allEmployees',
                 element: <EmployeesList />
+            },
+            {
+                path: 'previousEmployees',
+                element: <PreviousEmployees />
             },
             {
                 path: 'leaveRequest',
