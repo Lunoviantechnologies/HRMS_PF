@@ -16,7 +16,7 @@ export default function NotificationMenu() {
     if (!user?.sub) return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${backendIP}/HRMS/ws`),
+      webSocketFactory: () => new SockJS(`${backendIP}/ws`),
       reconnectDelay: 5000,
       // connectHeaders: {
       //   // Spring uses Principal name internally, ensure unique

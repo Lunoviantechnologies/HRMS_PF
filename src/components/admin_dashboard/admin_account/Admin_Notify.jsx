@@ -15,7 +15,7 @@ export default function AdminNotifications() {
     if (!user?.role || user.role !== "ADMIN") return;
     console.log("Testing...");
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${backendIP}/HRMS/ws`),
+      webSocketFactory: () => new SockJS(`${backendIP}/ws`),
       connectHeaders : {
         Authorization : token
       },
