@@ -4,8 +4,10 @@ import { Client } from "@stomp/stompjs";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { IconButton, Badge, Menu, MenuItem, Typography } from "@mui/material";
 import backendIP from "../../../api";
+import { useAuth } from "../../../context/AuthContext";
 
-export default function AdminNotifications({ user }) {
+export default function AdminNotifications() {
+  const { user, token } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -14,6 +16,9 @@ export default function AdminNotifications({ user }) {
     console.log("Testing...");
     const client = new Client({
       webSocketFactory: () => new SockJS(`${backendIP}/HRMS/ws`),
+      connectHeaders : {
+        Authorization : token
+      },
       reconnectDelay: 5000,
     });
 
@@ -21,10 +26,10 @@ export default function AdminNotifications({ user }) {
       console.log("✅ Admin connected to WebSocket...");
 
       // Subscribe to admin-specific topic
-      client.subscribe("/topic/admin", (msg) => handleMessage(msg));
+      client.subscribe("/topic/admin", (msg) => {handleMessage(msg); console.log(msg.body)});
 
       // Subscribe personal queue
-      client.subscribe("/user/queue/notifications", (msg) => handleMessage(msg));
+      client.subscribe("/user/queue/notifications", (msg) => {handleMessage(msg); console.log(msg.body)});
     };
 
     client.onStompError = (frame) => {
@@ -32,10 +37,13 @@ export default function AdminNotifications({ user }) {
     };
 
     const handleMessage = (msg) => {
+      console.log("📩 Raw WebSocket message:", msg);
       try {
         const parsed = JSON.parse(msg.body);
+        console.log("✅ Parsed message:", parsed);
         setNotifications((prev) => [...prev, parsed]);
       } catch {
+        console.log("⚠️ Non-JSON message received:", msg.body);
         setNotifications((prev) => [...prev, { type: "INFO", message: msg.body }]);
       }
     };

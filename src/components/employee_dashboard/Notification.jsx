@@ -2,44 +2,47 @@ import React, { useEffect, useState } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import { IconButton, Badge, Menu, MenuItem, Typography,} from "@mui/material";
+import { IconButton, Badge, Menu, MenuItem, Typography } from "@mui/material";
 import backendIP from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
-export default function NotificationMenu({ user }) {
+export default function NotificationMenu() {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
-    if (!user?.emailId) return; // wait for user info
+    // console.log("🔍 Current user object:", user);
+    if (!user?.sub) return;
 
     const client = new Client({
       webSocketFactory: () => new SockJS(`${backendIP}/HRMS/ws`),
       reconnectDelay: 5000,
-      connectHeaders: {
-        // Important: pass unique identifier (backend uses this for convertAndSendToUser)
-        login: user.emailId,
-      },
+      // connectHeaders: {
+      //   // Spring uses Principal name internally, ensure unique
+      //   login: user.sub,
+      // },
     });
 
     client.onConnect = () => {
       console.log("✅ Employee connected to WebSocket");
 
-      // Subscribe to personal queue
+      // Personal queue (convertAndSendToUser)
       client.subscribe("/user/queue/notifications", (msg) => {
-        try {
-          const parsed = JSON.parse(msg.body);
-          setNotifications((prev) => [...prev, parsed]);
-        } catch {
-          setNotifications((prev) => [
-            ...prev,
-            { type: "INFO", message: msg.body },
-          ]);
-        }
+        console.log("📩 From /user/queue/notifications:", msg.body);
+        handleMessage(msg);
       });
 
-      // (optional) Global or employee-only channel
+      if (user.employeeId) {
+        client.subscribe(`/topic/employee/${user.employeeId}`, (msg) => {
+          console.log("📩 /topic/employee:", msg.body);
+          handleMessage(msg);
+        });
+      }
+
       client.subscribe("/topic/employees", (msg) => {
-        setNotifications((prev) => [...prev, { type: "EMPLOYEE", message: msg.body }]);
+        console.log("📩 From /topic/employees:", msg.body);
+        handleMessage(msg, "BROADCAST");
       });
     };
 
@@ -47,8 +50,22 @@ export default function NotificationMenu({ user }) {
       console.error("❌ Broker error:", frame.headers["message"]);
     };
 
-    client.activate();
+    const handleMessage = (msg, forcedType) => {
+      try {
+        const parsed = JSON.parse(msg.body);
+        setNotifications((prev) => [
+          ...prev,
+          forcedType ? { ...parsed, type: forcedType } : parsed,
+        ]);
+      } catch {
+        setNotifications((prev) => [
+          ...prev,
+          { type: forcedType || "INFO", message: msg.body },
+        ]);
+      }
+    };
 
+    client.activate();
     return () => client.deactivate();
   }, [user]);
 
@@ -75,7 +92,13 @@ export default function NotificationMenu({ user }) {
         )}
         {notifications.map((n, i) => (
           <MenuItem key={i} onClick={handleClose}>
-            <Typography variant="body2">
+            <Typography
+              variant="body2"
+              sx={{
+                color: n.type === "LEAVE_REQUEST" ? "blue" : "black",
+                fontWeight: n.type === "LEAVE_REQUEST" ? "bold" : "normal",
+              }}
+            >
               <strong>{n.type || "INFO"}:</strong> {n.message}
             </Typography>
           </MenuItem>
@@ -84,4 +107,3 @@ export default function NotificationMenu({ user }) {
     </div>
   );
 }
-
