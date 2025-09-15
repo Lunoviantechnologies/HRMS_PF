@@ -87,7 +87,7 @@ const AdminLogin = () => {
                                                 setAuth({ ...auth, email: e.target.value })
                                             }
                                         />
-                                        <label htmlFor="loginEmail">Email address</label>
+                                        <label className="text-white" htmlFor="loginEmail">Email address</label>
                                     </div>
 
                                     <div className="form-floating mb-3 position-relative">
@@ -102,7 +102,7 @@ const AdminLogin = () => {
                                                 setAuth({ ...auth, password: e.target.value })
                                             }
                                         />
-                                        <label htmlFor="loginPassword">Password</label>
+                                        <label className="text-white" htmlFor="loginPassword">Password</label>
 
                                         <span
                                             onClick={() => setShowPassword(!showPassword)}
@@ -185,17 +185,23 @@ const AdminLogin = () => {
                         }
                     }
 
-                    // .btn-success {
-                    //     background: #026423ff;
-                    //     border: none;
-                    //     transition: all 0.3s ease;
-                    // }
+                    .form-control {
+                        background: transparent !important;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        color: #fff;
+                        transition: all 0.3s ease;
+                    }
 
-                    // .btn-success:hover {
-                    //     background: #026423ff;
-                    //     transform: translateY(-2px);
-                    //     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-                    // }
+                    .form-control:focus {
+                        border-color: #1aa34a !important;
+                        box-shadow: 0 0 8px rgba(26, 163, 74, 0.6);
+                        background: transparent !important;
+                        color: #fff;
+                    }
+
+                    .form-control::placeholder {
+                        color: rgba(255, 255, 255, 0.5);
+                    }
 
                     .btn-success {
                         background: linear-gradient(270deg, #024f1cff, #1aa34a);
