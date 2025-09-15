@@ -159,6 +159,21 @@ const AdminLogin = () => {
             {/* Custom Styles */}
             <style jsx="true">
                 {`
+                    /* Fix overlay loader */
+                    .overlay-loader {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.6); /* dark transparent background */
+                        z-index: 1050; /* above everything */
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    
                     .login-bg {
                         background: linear-gradient(235deg, #1d1d1d, #248497ff);
                     }
@@ -201,6 +216,18 @@ const AdminLogin = () => {
 
                     .form-control::placeholder {
                         color: rgba(255, 255, 255, 0.5);
+                    }
+
+                    /* ✅ Fix floating label white space */
+                    .form-floating > .form-control:focus ~ label,
+                    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+                        transform: scale(0.85) translateY(-0.6rem) translateX(0.15rem);
+                        color: #1aa34a;
+                    }
+
+                    .form-floating > label {
+                        color: #fff;
+                        transition: all 0.3s ease;
                     }
 
                     .btn-success {
