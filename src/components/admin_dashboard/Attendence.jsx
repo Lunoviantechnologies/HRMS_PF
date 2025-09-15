@@ -88,8 +88,7 @@ const Attendance = () => {
         setSelectedRow(row);
         setShowModal(true);
 
-        axios
-            .get(`${backendIP}/HRMS/api/attendance/${row.employeeId}`, {
+        axios.get(`${backendIP}/api/attendance/${row.employeeId}`, {
                 headers: { Authorization: token },
                 params: { year: new Date().getFullYear() }, // full year records
             })

@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 
 const PreviousEmployees = () => {
     const { token } = useAuth();
-    const [previousEmpList, setPreviousEmpList] = useState([]);
+    const [previousEmpList, setPreviousEmpList] = useState([]); 
 
     useEffect(() => {
         axios

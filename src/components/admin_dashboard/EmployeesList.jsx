@@ -46,7 +46,7 @@ const EmployeesList = () => {
         const confirmDelete = window.confirm(`Are you sure you want to delete ${employee.firstName}?`);
         if (!confirmDelete) return;
 
-        axios.delete(`${backendIP}/HRMS/api/employees/delete/${employee.id}`, {
+        axios.delete(`${backendIP}/api/employees/delete/${employee.id}`, {
             headers: {
                 Authorization: token
             }
@@ -94,7 +94,7 @@ const EmployeesList = () => {
                         <th className="tableHeader_employeeList">Last Name</th>
                         <th className="tableHeader_employeeList">Mobile</th>
                         <th className="tableHeader_employeeList">E-mail</th>
-                        <th className="tableHeader_employeeList">Action</th>
+                        <th className="tableHeader_employeeList">Action</th> 
                     </tr>
                 </thead>
                 <tbody className="text-center">
