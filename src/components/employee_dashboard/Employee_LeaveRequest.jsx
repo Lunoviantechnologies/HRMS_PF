@@ -14,7 +14,7 @@ const Employee_LeaveRequest = () => {
         reason: ""
     });
 
-    const [successMsg, setSuccessMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState(""); 
     const [errorMsg, setErrorMsg] = useState("");
 
     const handleChange = (e) => {
