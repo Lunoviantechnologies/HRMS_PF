@@ -13,7 +13,7 @@ export default function NotificationMenu({ user }) {
     if (!user?.emailId) return; // wait for user info
 
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${backendIP}/HRMS/ws`),
+      webSocketFactory: () => new SockJS(`${backendIP}/ws`),
       reconnectDelay: 5000,
       connectHeaders: {
         // Important: pass unique identifier (backend uses this for convertAndSendToUser)

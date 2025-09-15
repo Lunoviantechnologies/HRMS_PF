@@ -193,7 +193,7 @@ const AddEmployee = () => {
             if (values.document2) formDataToSend.append("document2", values.document2);
             if (values.document3) formDataToSend.append("document3", values.document3);
 
-            const res = await axios.post(`${backendIP}/HRMS/api/employees/register`, formDataToSend, {
+            const res = await axios.post(`${backendIP}/api/employees/register`, formDataToSend, {
                 headers: {
                     Authorization: token,
                     "Content-Type": "multipart/form-data",

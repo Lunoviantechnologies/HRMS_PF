@@ -24,7 +24,7 @@ const EmployeesList = () => {
     };
 
     useEffect(() => {
-        axios.get(`${backendIP}/HRMS/api/employees/all`, {
+        axios.get(`${backendIP}/api/employees/all`, {
             headers: {
                 Authorization: token
             }

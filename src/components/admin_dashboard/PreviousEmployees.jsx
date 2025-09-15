@@ -10,7 +10,7 @@ const PreviousEmployees = () => {
 
     useEffect(() => {
         axios
-            .get(`${backendIP}/HRMS/api/employees/archieved_employees`, {
+            .get(`${backendIP}/api/employees/archieved_employees`, {
                 headers: {
                     Authorization: token,
                 },
