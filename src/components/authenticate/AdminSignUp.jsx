@@ -26,7 +26,7 @@ export default function AdminSignUp() {
         }
         else {
             // console.log(formData);
-            axios.post(`${backendIP}/HRMS/admine_Register`, formData, {
+            axios.post(`${backendIP}/admine_Register`, formData, {
                 headers: {
                     "Content-Type": "application/json"
                 }

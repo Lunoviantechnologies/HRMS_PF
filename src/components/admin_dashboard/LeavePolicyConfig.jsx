@@ -32,7 +32,7 @@ const LeavePolicyConfig = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${backendIP}/HRMS/leave/policy/update`, policy);
+      await axios.put(`${backendIP}/leave/policy/update`, policy);
       setShowToast(true);
     } catch (error) {
       console.error("Error updating policy:", error);
