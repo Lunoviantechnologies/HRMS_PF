@@ -66,4 +66,51 @@
   text-align: center;
 }
 
+/* LeaveList */
+
+.tableHeader_leaveList {
+  background-color: #0385acff !important;
+  color: white !important;
+  text-align: center;
+}
+
+/* Attendance  */
+
+.present-day {
+  background: green !important;
+  color: white !important;
+  border-radius: 50% !important;
+}
+
+.absent-day {
+  background: red !important;
+  color: white !important;
+  border-radius: 50% !important;
+}
+
+.halfday-day {
+  background: orange !important;
+  color: white !important;
+  border-radius: 50% !important;
+}
+
+/* Legend */
+.legend {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.legend-item {
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: white;
+  font-size: 14px;
+}
+
+.legend-item.present { background: green; }
+.legend-item.absent { background: red; }
+.legend-item.halfday { background: orange; }
+
 

@@ -2,56 +2,12 @@ import React, { useEffect, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Modal } from "react-bootstrap";
 import { Card, Paper } from "@mui/material";
-import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import backendIP from "../../api";
+import AttendanceCalendar from "./AttendenceCalender";
 
-// ================== Calendar Component ==================
-const AttendanceCalendar = ({ records }) => {
-    const [selectedDate, setSelectedDate] = useState(new Date());
-
-    // Convert date to YYYY-MM-DD
-    const formatDate = (date) => date.toISOString().split("T")[0];
-
-    // Decide tile class based on attendance
-    const tileClassName = ({ date, view }) => {
-        if (view === "month") {
-            const status = records.find(
-                (r) => formatDate(new Date(r.date)) === formatDate(date)
-            )?.status;
-
-            if (status === "present") return "present-day";
-            if (status === "absent") return "absent-day";
-            if (status === "half") return "halfday-day";
-        }
-        return null;
-    };
-
-    return (
-        <div style={{ textAlign: "center" }}>
-            <Calendar
-                onChange={setSelectedDate}
-                value={selectedDate}
-                tileClassName={tileClassName}
-            />
-
-            <p style={{ marginTop: "10px" }}>
-                Selected Date: <b>{selectedDate.toDateString()}</b>
-            </p>
-
-            {/* Legend */}
-            <div className="legend">
-                <span className="legend-item present">Present</span>
-                <span className="legend-item absent">Absent</span>
-                <span className="legend-item halfday">Half-day</span>
-            </div>
-        </div>
-    );
-};
-
-// ================== Main Component ==================
 const Attendance = () => {
     const { token } = useAuth();
     const [employeeAttendance, setEmployeeAttendance] = useState([]);
@@ -59,7 +15,6 @@ const Attendance = () => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [attendanceRecords, setAttendanceRecords] = useState([]);
 
-    // Fetch all employees 
     useEffect(() => {
         axios
             .get(`${backendIP}/api/attendance/all`, {
@@ -67,16 +22,30 @@ const Attendance = () => {
             })
             .then((res) => {
                 const formattedData = res.data.map((item, index) => ({
+                    ...item,
                     id: item.id || index,
                     employeeEmail: item.employeeEmail,
                     location: item.location,
                     photo: item.photo || "-",
-                    employeeId: item.employeeId,
+                    employee_Id: item.employee_Id,
                     firstName: item.firstName || "",
                     lastName: item.lastName || "",
-                    ...item,
+                    punchInTime: new Date(item.punchInTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }),
+                    punchOutTime: item.punchOutTime
+                        ? new Date(item.punchOutTime).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        })
+                        : "-",
+                    punchInDate: new Date(item.punchInTime).toLocaleDateString("en-CA") // ✅ fixed
                 }));
+
                 setEmployeeAttendance(formattedData);
+                console.log(res.data);
+
             })
             .catch((err) => {
                 console.error("Error fetching attendance:", err);
@@ -88,16 +57,14 @@ const Attendance = () => {
         setSelectedRow(row);
         setShowModal(true);
 
-        axios.get(`${backendIP}/api/attendance/${row.employeeId}`, {
-                headers: { Authorization: token },
-                params: { year: new Date().getFullYear() }, // full year records
-            })
-            .then((res) => {
-                setAttendanceRecords(res.data);
-            })
-            .catch((err) => {
-                console.error("Error fetching employee attendance:", err);
-            });
+        const employeeRecord = employeeAttendance
+            .filter(rec => rec.employeeEmail === row.employeeEmail)
+            .map((rec) => ({
+                date: rec.punchInDate,   // already "YYYY-MM-DD"
+                status: rec.status || (rec.punchInTime ? "present" : "absent"),
+            }));
+        // console.log(employeeRecord);
+        setAttendanceRecords(employeeRecord);
     };
 
     // DataGrid Columns
@@ -105,6 +72,9 @@ const Attendance = () => {
         { field: "id", headerName: "ID", width: 70 },
         { field: "employeeEmail", headerName: "Email", width: 200 },
         { field: "location", headerName: "Location", width: 150 },
+        { field: "punchInDate", headerName: "Punch In Date", width: 150 },
+        { field: "punchInTime", headerName: "Punch In", width: 150 },
+        { field: "punchOutTime", headerName: "Punch Out", width: 150 },
         {
             field: "photo",
             headerName: "Thumbnail",
@@ -114,12 +84,7 @@ const Attendance = () => {
                     <img
                         src={`data:image/jpeg;base64,${params.value}`}
                         alt="Employee"
-                        style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "50%",
-                            objectFit: "cover"
-                        }}
+                        style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", }}
                     />
                 ) : (
                     <span>No Photo</span>
@@ -147,6 +112,7 @@ const Attendance = () => {
 
             <Card sx={{ padding: "15px", boxShadow: 4, marginTop: 3 }}>
                 <h4 style={{ textAlign: "center" }}>Employee Attendance List</h4>
+
                 <Paper sx={{ height: 400, width: "100%", marginTop: "20px" }}>
                     <DataGrid
                         rows={employeeAttendance}
@@ -154,6 +120,35 @@ const Attendance = () => {
                         pageSizeOptions={[5, 10]}
                         checkboxSelection
                         getRowId={(row) => row.id}
+                        sx={{
+                            border: "1px solid #ccc",
+
+                            // ✅ header row 
+                            "& .MuiDataGrid-columnHeaders": {
+                                backgroundColor: "#0385ac",
+                                color: "#fff",
+                            },
+
+                            // ✅ header cell text
+                            "& .MuiDataGrid-columnHeaderTitle": {
+                                fontWeight: "bold",
+                                color: "#fff",
+                            },
+
+                            // ✅ checkbox/header icons
+                            "& .MuiDataGrid-columnHeader": {
+                                backgroundColor: "#0385ac",
+                                color: "#fff",
+                            },
+
+                            // ✅ rows & columns border
+                            "& .MuiDataGrid-cell": {
+                                borderRight: "1px solid #ccc",
+                            },
+                            "& .MuiDataGrid-row": {
+                                borderBottom: "1px solid #ccc",
+                            },
+                        }}
                     />
                 </Paper>
             </Card>
