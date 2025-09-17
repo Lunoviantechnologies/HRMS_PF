@@ -1,20 +1,6 @@
 // src/components/admin_dashboard/EmployeeSalary.jsx
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableContainer,
-  Paper,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Card, CardContent, Typography, TextField, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, CircularProgress,} from "@mui/material";
 import axios from "axios";
 import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
@@ -89,7 +75,7 @@ const EmployeeSalary = () => {
   return (
     <Box p={3}>
       <Typography variant="h4" gutterBottom fontWeight="bold">
-        👨‍💼 Employee Salaries
+         Employee Salaries
       </Typography>
 
       {/* 🔍 Search Bar */}

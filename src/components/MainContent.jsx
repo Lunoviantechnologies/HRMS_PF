@@ -74,11 +74,11 @@ export default function MainContent() {
 
   return (
     <div>
-      <h1>Welcome to HR PROJECT</h1>
+      <h1>Welcome to Lunovian</h1>
       <Box sx={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 2 }}>
         {
           cards.map((card, index) => (
-            <Card key={card.id}>
+            <Card key={card.id} sx={{boxShadow: 5}}>
               <CardActionArea onClick={() => setSelectedCard(index)} data-active={selectedCard === index ? '' : undefined}
                 sx={{ height: '100%', '&[data-active]': {backgroundColor: 'action.selected', '&:hover': { backgroundColor: 'action.selectedHover' }}}}>
                 <CardContent sx={{ height: '100%' }}>
