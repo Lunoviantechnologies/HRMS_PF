@@ -6,7 +6,7 @@ import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 const SalaryDetails = () => {
-  const { token, user } = useAuth();
+  const { token, user } = useAuth(); 
   const [salaryData, setSalaryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
