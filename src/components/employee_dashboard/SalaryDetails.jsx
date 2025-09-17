@@ -15,6 +15,9 @@ const SalaryDetails = () => {
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
   });
+  const today = new Date();
+  const month = today.toLocaleString("default", { month: "long" });
+  const year = today.getFullYear();
 
   // Fixed values
   const EPF_EMPLOYEE = 1800;
@@ -51,6 +54,7 @@ const SalaryDetails = () => {
         epfEmployee: EPF_EMPLOYEE,
         epfEmployer: EPF_EMPLOYER,
         profTax: PROFESSIONAL_TAX,
+        monthlySalary: (res.data?.basicSalary / 12).toFixed(0),
       });
     } catch (err) {
       console.error("Error fetching salary details:", err);
@@ -69,7 +73,7 @@ const SalaryDetails = () => {
 
   // ✅ Calculations
   const grossEarning =
-    (salaryData?.basicSalary || 0) +
+    (salaryData?.monthlySalary - salaryData?.hra - salaryData?.cca - salaryData?.conveyance || 0) +
     (salaryData?.hra || 0) +
     (salaryData?.cca || 0) +
     (salaryData?.conveyance || 0) +
@@ -78,11 +82,11 @@ const SalaryDetails = () => {
   const totalDeductions =
     (salaryData?.epfEmployee || 0) + (salaryData?.profTax || 0) + (salaryData?.epfEmployer || 0);
 
-  const netPay = salaryData?.basicSalary ? parseFloat(salaryData.basicSalary).toFixed(2) : 0;
+  const netPay = salaryData?.monthlySalary ? salaryData.monthlySalary - totalDeductions : 0;
 
-  const yearlyGross = grossEarning ;
-  const yearlyNet = netPay ;
-  const ctc = yearlyNet + (salaryData?.epfEmployer || 0) ;
+  const yearlyGross = grossEarning;
+  const yearlyNet = netPay;
+  const ctc = yearlyNet + (salaryData?.epfEmployer || 0);
 
   // 📄 Download Payslip PDF
   const handleDownloadPayslip = () => {
@@ -101,7 +105,7 @@ const SalaryDetails = () => {
 
     doc.setFontSize(14);
     doc.text(
-      `Payslip for the Month ${salaryData.month}/${salaryData.year}`,
+      `Payslip for the Month ${salaryData.monthlySalary}/${salaryData.year}`,
       70,
       40
     );
@@ -132,11 +136,11 @@ const SalaryDetails = () => {
     doc.setFontSize(12);
     doc.text(`Gross Earning (Yearly): ₹${salaryData.basicSalary}`, 20, 185);
     doc.text(`Total Deductions: ₹${totalDeductions}`, 120, 185);
-    doc.text(`Yearly Net: ₹${((((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX)*12}`, 20, 195);
+    doc.text(`Yearly Net: ₹${netPay * 12}`, 20, 195);
     doc.text(`CTC: ₹${salaryData.basicSalary}`, 120, 195);
 
     doc.setFontSize(14);
-    doc.text(`Net Pay: ₹${(((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX}}`, 20, 220);
+    doc.text(`Net Pay: ₹${netPay}`, 20, 220);
 
     doc.setFontSize(9);
     doc.text(
@@ -233,6 +237,7 @@ const SalaryDetails = () => {
         >
           <CardContent>
             <Typography variant="h5" className="fw-bold">
+              <img src="/lunovian_logo.png" alt="lunovian_logo" style={{ height: '60px', width: '60px', borderRadius: '50%', backgroundColor: 'black'}}/>
               Lunovian Technologies Pvt Ltd
             </Typography>
             <Typography variant="body2" color="textSecondary">
@@ -240,7 +245,7 @@ const SalaryDetails = () => {
             </Typography>
 
             <Typography variant="h6" align="center" className="mt-3 fw-bold">
-              Payslip for {salaryData.month}/{salaryData.year}
+              Payslip for {month} / {year}
             </Typography>
 
             <Grid container spacing={3} className="mt-3">
@@ -280,7 +285,7 @@ const SalaryDetails = () => {
                       color="success.main"
                       className="fw-bold"
                     >
-                      ₹{(((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX}
+                      ₹{netPay}
                     </Typography>
                     <Typography variant="body2">
                       Paid days: {salaryData.paidDays} | LOP days:{" "}
@@ -304,7 +309,7 @@ const SalaryDetails = () => {
               <TableBody>
                 <TableRow>
                   <TableCell>Basic</TableCell>
-                  <TableCell>₹{(salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance}</TableCell>
+                  <TableCell>₹{grossEarning - salaryData.hra - salaryData.cca - salaryData.conveyance - salaryData.allowance}</TableCell>
                   <TableCell>EPF (Employee)</TableCell>
                   <TableCell>₹{EPF_EMPLOYEE}</TableCell>
                 </TableRow>
@@ -334,19 +339,19 @@ const SalaryDetails = () => {
                 </TableRow>
                 <TableRow className="table-warning">
                   <TableCell colSpan={4} className="fw-bold">
-                    Total Net Payable ₹{(((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)}
+                    Gross Salary ₹{grossEarning}
                   </TableCell>
                 </TableRow>
                 <TableRow className="table-warning">
                   <TableCell colSpan={4} className="fw-bold">
-                    Total Deduction Payable ₹{(EPF_EMPLOYER +EPF_EMPLOYER+PROFESSIONAL_TAX)*12}
+                    Total Deduction Payable ₹{totalDeductions * 12}
                   </TableCell>
                 </TableRow>
                 <TableRow className="table-info">
                   <TableCell className="fw-bold">Yearly Gross</TableCell>
                   <TableCell className="fw-bold">₹{salaryData.basicSalary} </TableCell>
                   <TableCell className="fw-bold">Yearly Net</TableCell>
-                  <TableCell className="fw-bold">₹{((((salaryData.basicSalary/12).toFixed(0)-salaryData.hra -salaryData.cca -salaryData.conveyance -salaryData.allowance) + salaryData.hra + salaryData.cca + salaryData.conveyance + salaryData.allowance).toFixed(0)-EPF_EMPLOYER -EPF_EMPLOYER-PROFESSIONAL_TAX)*12}</TableCell>
+                  <TableCell className="fw-bold">₹{netPay * 12}</TableCell>
                 </TableRow>
                 <TableRow className="table-success">
                   <TableCell className="fw-bold">CTC</TableCell>
