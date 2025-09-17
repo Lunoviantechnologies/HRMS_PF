@@ -23,6 +23,8 @@ import Settings from './components/employee_dashboard/Settings.jsx';
 import SalaryDetails from './components/employee_dashboard/SalaryDetails.jsx';
 import EditAdminProfile from './components/admin_dashboard/admin_account/EditAdminProfile.jsx';
 import PreviousEmployees from './components/admin_dashboard/PreviousEmployees.jsx';
+import SalaryDashboard from './components/admin_dashboard/SalaryDashboard.jsx';
+import EmployeeSalary from './components/admin_dashboard/EmployeeSalary.jsx';
 
 const router = createBrowserRouter([
     {
@@ -80,6 +82,14 @@ const router = createBrowserRouter([
             {
                 path: 'editProfile_admin',
                 element: <EditAdminProfile />
+            },
+            {
+                path:'salaryDashboard',
+                element:<SalaryDashboard/>
+            },
+            {
+                path:'EmployeeSalary',
+                element:<EmployeeSalary/>
             }
         ]
     },
