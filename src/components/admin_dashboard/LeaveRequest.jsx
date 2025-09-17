@@ -94,13 +94,13 @@ export default function LeaveRequest() {
       <Table bordered hover>
         <thead className="table-primary text-center">
           <tr>
-            <th>Thumbnail</th>
-            <th>Mail</th>
-            <th>Leave Type</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th className="tableHeader_leaveList">Thumbnail</th>
+            <th className="tableHeader_leaveList">Mail</th>
+            <th className="tableHeader_leaveList">Leave Type</th>
+            <th className="tableHeader_leaveList">Start</th>
+            <th className="tableHeader_leaveList">End</th>
+            <th className="tableHeader_leaveList">Status</th>
+            <th className="tableHeader_leaveList">Action</th>
           </tr>
         </thead>
         <tbody>
