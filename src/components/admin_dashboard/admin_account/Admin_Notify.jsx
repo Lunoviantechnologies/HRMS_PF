@@ -1,54 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { IconButton, Badge, Menu, MenuItem, Typography } from "@mui/material";
 import backendIP from "../../../api";
 import { useAuth } from "../../../context/AuthContext";
+import axios from "axios";
 
 export default function AdminNotifications() {
   const { user, token } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
+  const clientRef = useRef(null);
 
+  // --- Handle WebSocket/STOMP ---
   useEffect(() => {
-    if (!user?.role || user.role !== "ADMIN") return;
-    console.log("Testing...");
-    const client = new Client({
-      webSocketFactory: () => new SockJS(`${backendIP}/ws`),
-      connectHeaders : {
-        Authorization : token
-      },
-      reconnectDelay: 5000,
-    });
-
-    client.onConnect = () => {
-      console.log("✅ Admin connected to WebSocket...");
-
-      // Subscribe to admin-specific topic
-      client.subscribe("/topic/admin", (msg) => {handleMessage(msg); console.log(msg.body)});
-
-      // Subscribe personal queue
-      client.subscribe("/user/queue/notifications", (msg) => {handleMessage(msg); console.log(msg.body)});
-    };
-
-    client.onStompError = (frame) => {
-      console.error("Broker error:", frame.headers["message"]);
-    };
+    if (!user?.sub || user.role !== "ADMIN") return;
 
     const handleMessage = (msg) => {
-      console.log("📩 Raw WebSocket message:", msg);
       try {
         const parsed = JSON.parse(msg.body);
-        console.log("✅ Parsed message:", parsed);
         setNotifications((prev) => [...prev, parsed]);
       } catch {
-        console.log("⚠️ Non-JSON message received:", msg.body);
-        setNotifications((prev) => [...prev, { type: "INFO", message: msg.body }]);
+        setNotifications((prev) => [
+          ...prev,
+          { type: "INFO", message: msg.body },
+        ]);
       }
     };
 
+    axios.get(`${backendIP}/api/notifications/${user.sub}`, {
+      headers: { Authorization: token }
+    })
+      .then(res => setNotifications(res.data))
+      .catch(err => console.error(err));
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(`${backendIP}/ws`),
+      connectHeaders: { email: user.sub },
+      reconnectDelay: 5000,
+      debug: (str) => console.log("🔌 STOMP:", str),
+    });
+
+    client.onConnect = () => {
+      console.log("✅ Admin connected to WebSocket");
+      client.subscribe("/user/queue/notifications", handleMessage);
+    };
+
+    client.onStompError = (frame) => {
+      console.error("❌ Broker error:", frame.headers["message"]);
+    };
+
     client.activate();
+    clientRef.current = client;
+
     return () => client.deactivate();
   }, [user]);
 
@@ -57,6 +62,7 @@ export default function AdminNotifications() {
 
   return (
     <div>
+      {/* Notification Bell */}
       <IconButton color="inherit" onClick={handleOpen}>
         <Badge badgeContent={notifications.length} color="error">
           <NotificationsIcon />
@@ -69,16 +75,14 @@ export default function AdminNotifications() {
         onClose={handleClose}
         PaperProps={{ style: { maxHeight: 300, width: 350 } }}
       >
-        {notifications.length === 0 && <MenuItem disabled>No notifications</MenuItem>}
-
+        {notifications.length === 0 && (
+          <MenuItem disabled>No notifications</MenuItem>
+        )}
         {notifications.map((n, i) => (
           <MenuItem key={i} onClick={handleClose}>
             <Typography
               variant="body2"
-              sx={{
-                color: n.type === "LEAVE_REQUEST" ? "blue" : "black",
-                fontWeight: n.type === "LEAVE_REQUEST" ? "bold" : "normal",
-              }}
+              sx={{ fontWeight: n.type === "LEAVE_REQUEST" ? "bold" : "normal" }}
             >
               <strong>{n.type || "INFO"}:</strong> {n.message}
             </Typography>
@@ -88,7 +92,3 @@ export default function AdminNotifications() {
     </div>
   );
 }
-
-
-
-
