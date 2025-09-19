@@ -85,9 +85,9 @@ const Sidebar = () => {
           "Attendance",
           <>
             {navItem("Attendance Dashboard", "/dashboard/attendence")}
-            {navItem("Mark Attendance", "/dashboard/markAttendance")}
-            {navItem("Upload Attendance", "/dashboard/uploadAttendance")}
-            {navItem("Calendar View", "/dashboard/attendanceCalendar")}
+            {/* {navItem("Mark Attendance", "/dashboard/markAttendance")} */}
+            {/* {navItem("Upload Attendance", "/dashboard/uploadAttendance")} */}
+            {/* {navItem("Calendar View", "/dashboard/attendanceCalendar")} */}
           </>
         )}
 
@@ -108,12 +108,12 @@ const Sidebar = () => {
           <>
             {navItem("Salary Dashboard", "/dashboard/salaryDashboard")}
             {navItem("Employee Salaries", "/dashboard/employeeSalary")}
-            {navItem("Generate Payslip", "/dashboard/generatePayslip")}
-            {navItem("Send Payslip", "/dashboard/sendPayslip")}
-            {navItem("PF & Deductions", "/dashboard/pfDeductions")}
+            {/* {navItem("Generate Payslip", "/dashboard/generatePayslip")} */}
+            {/* {navItem("Send Payslip", "/dashboard/sendPayslip")} */}
+            {/* {navItem("PF & Deductions", "/dashboard/pfDeductions")} */}
           </>
         )}
-
+{/* 
         {collapsibleSection(
           "reportsAnalytics",
           "bi-bar-chart",
@@ -124,9 +124,9 @@ const Sidebar = () => {
             {navItem("Leave Report", "/dashboard/leaveReport")}
             {navItem("Download CSV", "/dashboard/downloadCSV")}
           </>
-        )}
+        )} */}
 
-        {collapsibleSection(
+        {/* {collapsibleSection(
           "systemSettings",
           "bi-gear-wide-connected",
           "System Settings",
@@ -136,7 +136,7 @@ const Sidebar = () => {
             {navItem("Holiday Config", "/dashboard/holidays")}
             {navItem("Roles & Permissions", "/dashboard/rolesPermissions")}
           </>
-        )}
+        )} */}
       </ul>
     </div>
   );
