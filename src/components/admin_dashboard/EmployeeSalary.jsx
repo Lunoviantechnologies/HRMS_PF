@@ -64,9 +64,8 @@ const EmployeeSalary = () => {
 
   // 💰 Get salary safely
   const getSalary = (emp) =>
-    {emp.salary || emp.basicSalary || emp.monthlySalary || 0
-      console.log(emp)
-    };
+    emp.salary || emp.basicSalary || emp.monthlySalary || 0;
+  console.log("get")
 
   // 📅 Format joining date
   const getJoiningDate = (emp) => {
