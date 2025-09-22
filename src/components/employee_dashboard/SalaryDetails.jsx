@@ -45,8 +45,11 @@ const SalaryDetails = () => {
     setError(null);
 
     try {
-      const res = await axios.get(
-        `${backendIP}/api/payslip/${employeeId}?month=${month}&year=${year}`
+      const res = await axios.get(`${backendIP}/api/payslip/${employeeId}?month=${month}&year=${year}`, {
+        headers : {
+          Authorization : token
+        }
+      }
       );
 
       setSalaryData({
