@@ -1,29 +1,9 @@
 // src/components/admin_dashboard/SalaryDashboard.jsx
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Divider,
-} from "@mui/material";
+import { Box, Card, CardContent, Typography, Grid, Table, TableBody, TableCell, TableHead, TableRow, CircularProgress, Divider, } from "@mui/material";
 import axios from "axios";
 import backendIP from "../../api";
-import {
-  PieChart,
-  Pie,
-  Tooltip,
-  Cell,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Tooltip, Cell, Legend, ResponsiveContainer, } from "recharts";
 import { useAuth } from "../../context/AuthContext";
 
 const COLORS = ["#1976d2", "#2e7d32", "#ed6c02", "#d32f2f"];
@@ -36,7 +16,7 @@ const SalaryDashboard = () => {
   useEffect(() => {
     axios
       .get(`${backendIP}/api/employees/all`, {
-        headers :{
+        headers: {
           Authorization: token
         }
       })
@@ -60,14 +40,18 @@ const SalaryDashboard = () => {
   }
 
   // --- Salary field handling ---
-  const getSalary = (emp) =>
-    emp.salary || (emp.basicEmployeeSalary/12) || emp.monthlySalary || 0;
+  const getSalary = (emp) => {
+    if (emp.salary) return Number(emp.salary); // already monthly
+    if (emp.monthlySalary) return Number(emp.monthlySalary);
+    if (emp.basicEmployeeSalary) return Math.round(emp.basicEmployeeSalary / 12);
+    return 0;
+  };
 
   // --- Salary Calculations ---
   const totalEmployees = employees.length;
   const totalSalary = employees.reduce((sum, emp) => sum + getSalary(emp), 0);
   const monthlyRevenue = totalSalary;
-  const yearlyRevenue = totalSalary * 12;
+  const yearlyRevenue = monthlyRevenue * 12;
 
   // --- Pie Chart Data ---
   const chartData = [

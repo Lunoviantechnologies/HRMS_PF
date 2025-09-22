@@ -418,7 +418,7 @@ const AddEmployee = () => {
 
                         {step === 3 && (
                             <Card sx={{ padding: '15px', boxShadow: 3 }}>
-                                <h5>Experience Details</h5>
+                                <h5>Experience / Fresher Details</h5>
                                 <Box sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}>
                                     <Field
                                         as={TextField}

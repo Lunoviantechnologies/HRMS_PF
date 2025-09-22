@@ -77,10 +77,7 @@ const SalaryDetails = () => {
 
   // ✅ Calculations
   const grossEarning =
-    (salaryData?.monthlySalary -
-      salaryData?.hra -
-      salaryData?.cca -
-      salaryData?.conveyance || 0) +
+    (salaryData?.monthlySalary - salaryData?.hra - salaryData?.cca - salaryData?.conveyance || 0) +
     (salaryData?.hra || 0) +
     (salaryData?.cca || 0) +
     (salaryData?.conveyance || 0) +
@@ -315,11 +312,7 @@ const SalaryDetails = () => {
                     <TableCell>Basic</TableCell>
                     <TableCell>
                       ₹
-                      {grossEarning -
-                        salaryData.hra -
-                        salaryData.cca -
-                        salaryData.conveyance -
-                        salaryData.allowance}
+                      {grossEarning - salaryData.hra - salaryData.cca - salaryData.conveyance - salaryData.allowance}
                     </TableCell>
                     <TableCell>EPF (Employee)</TableCell>
                     <TableCell>₹{EPF_EMPLOYEE}</TableCell>
