@@ -6,7 +6,7 @@ import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import backendIP from "../../api";
-import AttendanceCalendar from "./AttendenceCalender"; 
+import AttendanceCalendar from "./AttendenceCalender";
 
 const Attendance = () => {
     const { token } = useAuth();
@@ -26,6 +26,7 @@ const Attendance = () => {
                     id: item.id || index,
                     breakStart: item.breakStart,
                     breakEnd: item.breakEnd,
+                    breakeStatus: item.breakeStatus,
                     employeeEmail: item.employeeEmail,
                     location: item.location,
                     photo: item.photo || "-",
@@ -34,12 +35,14 @@ const Attendance = () => {
                     lastName: item.lastName || "",
                     punchIn: new Date(item.punchIn).toLocaleTimeString([], {
                         hour: "2-digit",
-                        minute: "2-digit"
+                        minute: "2-digit",
+                        second: "2-digit"
                     }),
-                    punchOut: item.punchOutTime
+                    punchOut: item.punchOut
                         ? new Date(item.punchOut).toLocaleTimeString([], {
                             hour: "2-digit",
-                            minute: "2-digit"
+                            minute: "2-digit",
+                            second: "2-digit"
                         })
                         : "-",
                     date: new Date(item.date).toLocaleDateString("en-CA") // ✅ fixed
@@ -56,16 +59,51 @@ const Attendance = () => {
 
     // Handle view + fetch employee records
     const handleView = (row) => {
-        setSelectedRow(row);
+        const calculateBreakTime = (row) => {
+            const diffMs = new Date(row.breakEnd) - new Date(row.breakStart);
+            const totalSeconds = Math.floor(diffMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            // Pad with leading zero → 2 digits
+            const pad = (n) => String(n).padStart(2, "0");
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        };
+
+        const calculateWorkingHours = (row) => {
+            const start = new Date(row.punchIn);
+            const end = new Date(row.punchOut);
+            if (!row.punchIn || !row.punchOut || isNaN(start) || isNaN(end)) return "00:00:00";
+            let totalMs = end - start; // total working time in ms
+
+            // Subtract break time if provided
+            if (row.breakStart && row.breakEnd) {
+                const breakStartDate = new Date(row.breakStart);
+                const breakEndDate = new Date(row.breakEnd);
+                if (!isNaN(breakStartDate) && !isNaN(breakEndDate)) {
+                    totalMs -= breakEndDate - breakStartDate;
+                }
+            }
+
+            if (totalMs < 0) totalMs = 0; // safeguard
+
+            const totalSeconds = Math.floor(totalMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const pad = (n) => String(n).padStart(2, "0");
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        };
+
+        setSelectedRow({ ...row, totalBreakTIme: calculateBreakTime(row), workingHours: calculateWorkingHours(row) });
         setShowModal(true);
 
         const employeeRecord = employeeAttendance
             .filter(rec => rec.employeeEmail === row.employeeEmail)
             .map((rec) => ({
                 date: rec.date,   // already "YYYY-MM-DD"
-                status: rec.status || (rec.punchIn ? "present" : "absent"),
-                date: rec.date,   // already "YYYY-MM-DD"
-                status: rec.status || (rec.punchIn ? "present" : "absent"),
+                status: rec.status || (rec.punchIn ? "present" : "absent")
             }));
         // console.log(employeeRecord);
         setAttendanceRecords(employeeRecord);
@@ -74,14 +112,6 @@ const Attendance = () => {
     // DataGrid Columns
     const columns = [
         { field: "id", headerName: "ID", width: 70 },
-        { field: "employeeEmail", headerName: "Email", width: 200 },
-        { field: "location", headerName: "Location", width: 150 },
-        { field: "date", headerName: "Punch In Date", width: 150 },
-        { field: "punchIn", headerName: "Punch In", width: 150 },
-        { field: "punchOut", headerName: "Punch Out", width: 150 },
-        { field: "date", headerName: "Punch In Date", width: 150 },
-        { field: "punchIn", headerName: "Punch In", width: 150 },
-        { field: "punchOut", headerName: "Punch Out", width: 150 },
         {
             field: "photo",
             headerName: "Thumbnail",
@@ -97,6 +127,21 @@ const Attendance = () => {
                     <span>No Photo</span>
                 ),
         },
+        { field: "employeeEmail", headerName: "Email", width: 200 },
+        {
+            field: "breakeStatus",
+            headerName: "Status",
+            width: 150,
+            renderCell: (params) => (
+                <b style={{ color: params.value === "ACTIVE" ? "green" : "red" }}>
+                    {params.value}
+                </b>
+            ),
+        },
+        { field: "date", headerName: "Date", width: 150 },
+        { field: "punchIn", headerName: "Punch In", width: 150 },
+        { field: "punchOut", headerName: "Punch Out", width: 150 },
+        { field: "location", headerName: "Location", width: 150 },
         {
             field: "actions",
             headerName: "Action",
@@ -110,7 +155,7 @@ const Attendance = () => {
                     View
                 </Button>
             ),
-        },
+        }
     ];
 
     return (
@@ -173,13 +218,20 @@ const Attendance = () => {
                 <Modal.Body>
                     {selectedRow && (
                         <div>
-                            <h5>
-                                <strong>Name:</strong> {selectedRow.firstName}{" "}
-                                {selectedRow.lastName}
-                            </h5>
                             <p>
-                                <strong>Email:</strong> {selectedRow.employeeEmail}
+
                             </p>
+                            <ul type="none">
+                                <li>
+                                    <strong>Email :</strong> {selectedRow.employeeEmail}
+                                </li>
+                                <li>
+                                    <strong>Break Time :</strong> {selectedRow.totalBreakTIme}
+                                </li>
+                                <li>
+                                    <strong>Working Hours :</strong> {selectedRow.workingHours}
+                                </li>
+                            </ul>
 
                             {/* Real Calendar */}
                             <AttendanceCalendar records={attendanceRecords} />
