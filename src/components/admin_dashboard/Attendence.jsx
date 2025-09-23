@@ -6,7 +6,7 @@ import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import backendIP from "../../api";
-import AttendanceCalendar from "./AttendenceCalender";
+import AttendanceCalendar from "./AttendenceCalender"; 
 
 const Attendance = () => {
     const { token } = useAuth();
