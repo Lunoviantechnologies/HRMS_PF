@@ -32,7 +32,7 @@ const Attendance = () => {
                     employee_Id: item.employee_Id,
                     firstName: item.firstName || "",
                     lastName: item.lastName || "",
-                    punchIn: new Date(item.date).toLocaleTimeString([], {
+                    punchIn: new Date(item.punchIn).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit"
                     }),
@@ -42,7 +42,7 @@ const Attendance = () => {
                             minute: "2-digit"
                         })
                         : "-",
-                    date: new Date(item.punchIn).toLocaleDateString("en-CA") // ✅ fixed
+                    date: new Date(item.date).toLocaleDateString("en-CA") // ✅ fixed
                 }));
 
                 setEmployeeAttendance(formattedData);
