@@ -177,7 +177,7 @@ const AttendancePunch = () => {
   const handleBreakStart = async () => {
     try {
       const res = await axios.post(
-        `${backendIP}/api/attendance/break/start?email=${user.sub}`,
+        `${backendIP}/api/attendance/break/start?email=${user.sub}`, 
         null,
         { headers: { Authorization: token } }
       );
