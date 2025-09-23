@@ -177,7 +177,7 @@ const AttendancePunch = () => {
   const handleBreakStart = async () => {
     try {
       const res = await axios.post(
-        `${backendIP}/api/attendance/break/start?email=${user.sub}&breakeStatus=${Inactive}`,
+        `${backendIP}/api/attendance/break/start?email=${user.sub}`,
         null,
         { headers: { Authorization: token } }
       );
@@ -205,7 +205,7 @@ const AttendancePunch = () => {
   const handleBreakEnd = async () => {
     try {
       const res = await axios.post(
-        `${backendIP}/api/attendance/break/end?email=${user.sub}&breakeStatus=${Active}`,
+        `${backendIP}/api/attendance/break/end?email=${user.sub}`,
         null,
         { headers: { Authorization: token } }
       );
