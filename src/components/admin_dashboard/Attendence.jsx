@@ -32,7 +32,7 @@ const Attendance = () => {
                     employee_Id: item.employee_Id,
                     firstName: item.firstName || "",
                     lastName: item.lastName || "",
-                    punchIn: new Date(item.date).toLocaleTimeString([], {
+                    punchIn: new Date(item.punchIn).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit"
                     }),
@@ -42,7 +42,7 @@ const Attendance = () => {
                             minute: "2-digit"
                         })
                         : "-",
-                    date: new Date(item.punchIn).toLocaleDateString("en-CA") // ✅ fixed
+                    date: new Date(item.date).toLocaleDateString("en-CA") // ✅ fixed
                 }));
 
                 setEmployeeAttendance(formattedData);
@@ -64,6 +64,8 @@ const Attendance = () => {
             .map((rec) => ({
                 date: rec.date,   // already "YYYY-MM-DD"
                 status: rec.status || (rec.punchIn ? "present" : "absent"),
+                date: rec.date,   // already "YYYY-MM-DD"
+                status: rec.status || (rec.punchIn ? "present" : "absent"),
             }));
         // console.log(employeeRecord);
         setAttendanceRecords(employeeRecord);
@@ -74,6 +76,9 @@ const Attendance = () => {
         { field: "id", headerName: "ID", width: 70 },
         { field: "employeeEmail", headerName: "Email", width: 200 },
         { field: "location", headerName: "Location", width: 150 },
+        { field: "date", headerName: "Punch In Date", width: 150 },
+        { field: "punchIn", headerName: "Punch In", width: 150 },
+        { field: "punchOut", headerName: "Punch Out", width: 150 },
         { field: "date", headerName: "Punch In Date", width: 150 },
         { field: "punchIn", headerName: "Punch In", width: 150 },
         { field: "punchOut", headerName: "Punch Out", width: 150 },
