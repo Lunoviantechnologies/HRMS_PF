@@ -24,23 +24,25 @@ const Attendance = () => {
                 const formattedData = res.data.map((item, index) => ({
                     ...item,
                     id: item.id || index,
+                    breakStart: item.breakStart,
+                    breakEnd: item.breakEnd,
                     employeeEmail: item.employeeEmail,
                     location: item.location,
                     photo: item.photo || "-",
                     employee_Id: item.employee_Id,
                     firstName: item.firstName || "",
                     lastName: item.lastName || "",
-                    punchIn: new Date(item.punchInTime).toLocaleTimeString([], {
+                    punchIn: new Date(item.date).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit"
                     }),
                     punchOut: item.punchOutTime
-                        ? new Date(item.punchOutTime).toLocaleTimeString([], {
+                        ? new Date(item.punchOut).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit"
                         })
                         : "-",
-                    date: new Date(item.punchInTime).toLocaleDateString("en-CA") // ✅ fixed
+                    date: new Date(item.punchIn).toLocaleDateString("en-CA") // ✅ fixed
                 }));
 
                 setEmployeeAttendance(formattedData);
@@ -62,6 +64,8 @@ const Attendance = () => {
             .map((rec) => ({
                 date: rec.date,   // already "YYYY-MM-DD"
                 status: rec.status || (rec.punchIn ? "present" : "absent"),
+                date: rec.date,   // already "YYYY-MM-DD"
+                status: rec.status || (rec.punchIn ? "present" : "absent"),
             }));
         // console.log(employeeRecord);
         setAttendanceRecords(employeeRecord);
@@ -72,6 +76,9 @@ const Attendance = () => {
         { field: "id", headerName: "ID", width: 70 },
         { field: "employeeEmail", headerName: "Email", width: 200 },
         { field: "location", headerName: "Location", width: 150 },
+        { field: "date", headerName: "Punch In Date", width: 150 },
+        { field: "punchIn", headerName: "Punch In", width: 150 },
+        { field: "punchOut", headerName: "Punch Out", width: 150 },
         { field: "date", headerName: "Punch In Date", width: 150 },
         { field: "punchIn", headerName: "Punch In", width: 150 },
         { field: "punchOut", headerName: "Punch Out", width: 150 },

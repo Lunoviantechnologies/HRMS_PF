@@ -1,4 +1,3 @@
-// src/components/admin_dashboard/EmployeeSalary.jsx
 import React, { useEffect, useState } from "react";
 import { Box, Card, CardContent, Typography, TextField, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, CircularProgress,} from "@mui/material";
 import axios from "axios";
@@ -50,8 +49,7 @@ const EmployeeSalary = () => {
 
   // 💰 Get salary safely
   const getSalary = (emp) =>
-    emp.salary || emp.basicSalary || emp.monthlySalary || 0;
-  console.log("get")
+    emp.salary || emp.basicEmployeeSalary || emp.monthlySalary || 0;
 
   // 📅 Format joining date
   const getJoiningDate = (emp) => {

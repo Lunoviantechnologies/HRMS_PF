@@ -6,7 +6,7 @@ import backendIP from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LeaveRequest() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [selectedTab, setSelectedTab] = useState("ALL");
@@ -33,9 +33,8 @@ export default function LeaveRequest() {
   }, []);
 
   const handleStatusUpdate = async (id, newStatus) => {
-    // console.log(newStatus.toUpperCase());
-
     try {
+      // 1️⃣ Update leave status in backend
       await axios.put(
         `${backendIP}/api/leaves/updateStatus/${id}`,
         { status: newStatus },
@@ -46,11 +45,46 @@ export default function LeaveRequest() {
           },
         }
       );
+
+      // 2️⃣ Update local state
       const updatedRequests = leaveRequests.map((req) =>
         req.id === id ? { ...req, status: newStatus } : req
       );
       setLeaveRequests(updatedRequests);
       applyFilter(selectedTab, updatedRequests);
+
+      // 3️⃣ Find the employee email for notification
+      const leaveReq = leaveRequests.find((req) => req.id === id);
+      if (leaveReq) {
+        const notificationPayload = {
+          senderEmail: user.sub,
+          receiverEmail: leaveReq.employeeEmail,
+          actionType:
+            newStatus.toUpperCase() === "ACCEPTED"
+              ? "LEAVE_APPROVED"   // ✅ match backend
+              : newStatus.toUpperCase() === "REJECTED"
+                ? "LEAVE_REJECTED"
+                : "LEAVE_UPDATE",   // ⚠️ backend doesn’t handle this yet
+          message: `Your leave request from ${leaveReq.startDate} to ${leaveReq.endDate} has been ${newStatus}.`,
+        };
+
+        try {
+          await axios.post(
+            `${backendIP}/api/notifications/send`,
+            notificationPayload,
+            {
+              headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          console.log("📤 Leave notification sent successfully");
+        } catch (notifyErr) {
+          console.error("❌ Failed to send notification:", notifyErr);
+        }
+      }
+
       alert(`Leave status ${newStatus} updated for ID ${id}`);
     } catch (error) {
       console.error("Error updating status on the backend", error);

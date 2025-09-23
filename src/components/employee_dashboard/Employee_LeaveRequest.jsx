@@ -14,7 +14,7 @@ const Employee_LeaveRequest = () => {
         reason: ""
     });
 
-    const [successMsg, setSuccessMsg] = useState(""); 
+    const [successMsg, setSuccessMsg] = useState("");
     const [errorMsg, setErrorMsg] = useState("");
 
     const handleChange = (e) => {
@@ -23,17 +23,36 @@ const Employee_LeaveRequest = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(user);
 
         try {
-
-            const response = await axios.post(`${backendIP}/api/leaves/apply-leave/${user.sub}`, formData, {
-                headers : {
-                    Authorization : token,
-                    "Content-Type": "application/json"
+            // 1️⃣ Apply leave
+            const response = await axios.post(
+                `${backendIP}/api/leaves/apply-leave/${user.sub}`,
+                formData,
+                {
+                    headers: {
+                        Authorization: token,
+                        "Content-Type": "application/json",
+                    },
                 }
+            );
+
+            // 2️⃣ Send notification to admin
+            const notificationPayload = {
+                senderEmail: user.sub,
+                receiverEmail: "admin@example.com", // change to your actual admin email or leave null if backend handles
+                actionType: "LEAVE_APPLIED",
+                details: `${user.sub} applied leave from ${response.data.startDate} to ${response.data.endDate}`,
+            };
+
+            await axios.post(`${backendIP}/api/notifications/send`, notificationPayload, {
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "application/json",
+                },
             });
-            alert("Leave request submitted successfully!")
+
+            alert("Leave request submitted successfully!");
             setSuccessMsg("Leave request submitted successfully!");
             setErrorMsg("");
             console.log("Submitted:", response.data);
@@ -44,7 +63,7 @@ const Employee_LeaveRequest = () => {
                 leaveType: "",
                 startDate: "",
                 endDate: "",
-                reason: ""
+                reason: "",
             });
         } catch (error) {
             setErrorMsg("Failed to submit leave request.");
@@ -54,7 +73,7 @@ const Employee_LeaveRequest = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 500, margin: "auto", mt: 4, p: 3, boxShadow: 5, borderRadius: 2, backgroundColor : 'white'}}>
+        <Box sx={{ maxWidth: 500, margin: "auto", mt: 4, p: 3, boxShadow: 5, borderRadius: 2, backgroundColor: 'white' }}>
             <Typography variant="h5" gutterBottom>
                 Leave Request Form
             </Typography>
@@ -63,8 +82,8 @@ const Employee_LeaveRequest = () => {
             {errorMsg && <Typography color="red">{errorMsg}</Typography>}
 
             <form onSubmit={handleSubmit}>
-                <TextField fullWidth label="Employee Email ID" name="employeeEmail" value={formData.employeeEmail} disabled onChange={handleChange} margin="normal" 
-                    sx={{'& .MuiInputBase-input' : { color: 'red' }, '& .MuiInputLabel-root': { color: 'red'}, '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: 'red' }}}/>
+                <TextField fullWidth label="Employee Email ID" name="employeeEmail" value={formData.employeeEmail} disabled onChange={handleChange} margin="normal"
+                    sx={{ '& .MuiInputBase-input': { color: 'red' }, '& .MuiInputLabel-root': { color: 'red' }, '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: 'red' } }} />
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Leave Type</InputLabel>
                     <Select name="leaveType" value={formData.leaveType} onChange={handleChange} required>
