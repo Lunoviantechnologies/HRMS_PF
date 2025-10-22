@@ -143,11 +143,11 @@ const AddEmployee = () => {
 
     // validate firstname + lastname together
     const checkNameCombination = async (lastName, values) => {
-        console.log(values.firstName, lastName);
+        // console.log(values.firstName, lastName);
         if (!lastName) return "Last name is required";
         try {
             const res = await axios.get(`${backendIP}/api/employees/check-name?firstName=${values.firstName}&lastName=${lastName}`);
-            console.log(res.data.isUnique);
+            // console.log(res.data.isUnique);
             if (res.data.isUnique) {
                 return "This first + last name already exists";
             }
@@ -174,7 +174,7 @@ const AddEmployee = () => {
     };
 
     const handleSubmitForm = async (values, { resetForm }) => {
-        console.log("Response:", values);
+        // console.log("Response:", values);
         try {
             const formDataToSend = new FormData();
             Object.keys(values).forEach((key) => {
@@ -201,7 +201,7 @@ const AddEmployee = () => {
             });
 
             alert("Employee registered successfully!");
-            console.log("Response:", res.data);
+            // console.log("Response:", res.data);
         } catch (err) {
             console.error("Error:", err);
             alert("Failed to register employee.");

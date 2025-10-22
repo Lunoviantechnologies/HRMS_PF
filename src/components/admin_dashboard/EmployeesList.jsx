@@ -29,7 +29,7 @@ const EmployeesList = () => {
                 Authorization: token
             }
         }).then(res => {
-            console.log(res.data);
+            // console.log(res.data);
             setAllEmployeesList(res.data);
         }).catch(err => console.log(err));
     }, [token]);

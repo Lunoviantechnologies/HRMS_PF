@@ -21,7 +21,7 @@ const SalaryDashboard = () => {
         }
       })
       .then((res) => {
-        console.log("Employees API Response:", res.data); // ✅ Debug
+        // console.log("Employees API Response:", res.data); // ✅ Debug
         setEmployees(res.data || []);
         setLoading(false);
       })

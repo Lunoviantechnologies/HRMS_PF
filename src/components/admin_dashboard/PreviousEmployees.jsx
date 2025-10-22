@@ -16,7 +16,7 @@ const PreviousEmployees = () => {
                 },
             })
             .then((res) => {
-                console.log(res.data);
+                // console.log(res.data);
                 setPreviousEmpList(res.data);
             })
             .catch((err) => console.error(err));

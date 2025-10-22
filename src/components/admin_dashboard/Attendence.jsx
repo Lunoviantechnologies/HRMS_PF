@@ -49,7 +49,7 @@ const Attendance = () => {
                 }));
 
                 setEmployeeAttendance(formattedData);
-                console.log(res.data);
+                // console.log(res.data);
 
             })
             .catch((err) => {

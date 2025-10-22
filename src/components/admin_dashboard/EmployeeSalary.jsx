@@ -21,7 +21,7 @@ const EmployeeSalary = () => {
               : `Bearer ${token}`, // ✅ ensure no double Bearer
           },
         });
-        console.log("Employee Salary API Response:", res.data);
+        // console.log("Employee Salary API Response:", res.data);
         setEmployees(res.data || []);
         setFiltered(res.data || []);
       } catch (err) {

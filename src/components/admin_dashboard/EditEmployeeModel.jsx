@@ -57,7 +57,7 @@ const EditEmployeeModel = ({ show, onHide, employee }) => {
         }
       );
 
-      console.log("Update response:", formDataToSend);
+      // console.log("Update response:", formDataToSend);
       alert("Employee details updated successfully");
       onHide();
       // setEmployeeDetails(employeeDetails.map( emp =>{
