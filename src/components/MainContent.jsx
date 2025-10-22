@@ -54,15 +54,23 @@ export default function MainContent() {
         const leaveRes = await axios.get(`${backendIP}/api/leaves`, {
           headers: { Authorization: token }
         });
+
+        const todayStr = new Date().toISOString().split("T")[0]; // "2025-10-22"
+
         const filteredLeave = leaveRes.data.filter(leave => {
-          const today = new Date();
-          const from = new Date(leave.startDate);
-          const to = new Date(leave.endDate);
-          return today >= from && today <= to;
+          const fromStr = new Date(leave.startDate).toISOString().split("T")[0];
+          const toStr = new Date(leave.endDate).toISOString().split("T")[0];
+          console.log("todayStr",todayStr);
+          console.log("fromStr", fromStr);
+          console.log("toStr", toStr);
+
+          return todayStr >= fromStr && todayStr <= toStr;
         });
+        console.log(filteredLeave);
 
         const uniqueEmpIds = [...new Set(filteredLeave.map(l => l.employeeId))];
         setTotalLeaveData(uniqueEmpIds.length);
+
 
       } catch (err) {
         console.log(err);
