@@ -130,9 +130,9 @@ const AdminLogin = () => {
                                                 Remember me
                                             </label>
                                         </div>
-                                        <Link to={"/forgotPassword"} className="small text-decoration-none text-white fw-semibold">
+                                        {/* <Link to={"/forgotPassword"} className="small text-decoration-none text-white fw-semibold">
                                             Forgot password?
-                                        </Link>
+                                        </Link> */}
                                     </div>
 
                                     <button type="submit" className="btn btn-success w-100 mb-3" disabled={loading}>
