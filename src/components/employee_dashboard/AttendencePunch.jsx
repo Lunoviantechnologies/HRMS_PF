@@ -164,7 +164,7 @@ const AttendancePunch = () => {
           setBreakEndTime(null);
           setIsOnBreak(false);
           localStorage.removeItem(punchKey);
-        }, 3000);
+        }, 9000);
       }
 
       setMessage(responseMsg);
