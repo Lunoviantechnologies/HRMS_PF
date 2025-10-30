@@ -101,15 +101,10 @@ const AttendancePunch = () => {
     fetchLocation();
   }, []);
 
- // ✅ Updated Capture Function — freezes image after capture
-const capture = () => {
-  if (webcamRef.current) {
+  const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
-    setIsCameraActive(false); // stop showing live webcam feed
-  }
-};
-
+  };
 
   const dataURLtoFile = (dataUrl, filename) => {
     const arr = dataUrl.split(",");
@@ -134,7 +129,7 @@ const capture = () => {
         <h3>
           {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
         </h3>
-        <p>✅ You already completed your shift today.</p>
+        <p>✅ You already completed your  shift today.</p>
         <p>Come back tomorrow to Punch-In again.</p>
       </div>
     );
@@ -321,28 +316,21 @@ const capture = () => {
       >
         {!punchInTime && (
           <>
-            {isCameraActive ? (
-  <Webcam
-    ref={webcamRef}
-    screenshotFormat="image/jpeg"
-    width={320}
-    height={240}
-  />
-) : capturedImage ? (
-  <img
-    src={capturedImage}
-    alt="Captured"
-    style={{ width: 320, height: 240, borderRadius: "8px", border: "2px solid #ccc" }}
-  />
-) : (
-  <Webcam
-    ref={webcamRef}
-    screenshotFormat="image/jpeg"
-    width={320}
-    height={240}
-  />
-)}
-
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              width={260}
+              height={200}
+            />
+            <br />
+            <button
+              onClick={capture}
+              className="btn btn-outline-success"
+              style={{ margin: "10px", padding: "8px" }}
+            >
+              📸 Capture
+            </button>
             <button
               onClick={handlePunch}
               className="btn btn-outline-primary"
