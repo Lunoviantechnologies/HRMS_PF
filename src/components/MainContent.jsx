@@ -25,46 +25,59 @@ export default function MainContent() {
   const [totalLeaveData, setTotalLeaveData] = useState([]);
 
   useEffect(() => {
-    axios.get(`${backendIP}/api/attendance/all`, {
-      headers: { Authorization: token },
-    }).then(res => {
-      const todaysAttendance = res.data.filter(record => {
-        const recordDate = new Date(record.date);
-        const today = new Date();
-        return recordDate.getDate() === today.getDate() &&
-          recordDate.getMonth() === today.getMonth() &&
-          recordDate.getFullYear() === today.getFullYear();
-      });
+    const fetchData = async () => {
+      try {
+        const empRes = await axios.get(`${backendIP}/api/employees/all`, {
+          headers: { Authorization: token }
+        });
+        const employees = empRes.data;
+        setAllEmployeesList(employees);
 
-      const absentEmps = allEmployeesList.filter(emp => {
-        return !todaysAttendance.some(att => att.employeeId === emp.id);
-      });
-      setAbsentEmployees(absentEmps);
-      setAttendanceData(todaysAttendance);
-    });
+        const attendanceRes = await axios.get(`${backendIP}/api/attendance/all`, {
+          headers: { Authorization: token },
+        });
 
-    axios.get(`${backendIP}/api/employees/all`, {
-      headers: { Authorization: token },
-    }).then(res => {
-      // console.log(res.data);
-      setAllEmployeesList(res.data);
-    }).catch(err => console.log(err));
+        const todaysAttendance = attendanceRes.data.filter(record => {
+          const recordDate = new Date(record.date);
+          const today = new Date();
+          return recordDate.getDate() === today.getDate() &&
+            recordDate.getMonth() === today.getMonth() &&
+            recordDate.getFullYear() === today.getFullYear();
+        });
 
-    axios.get(`${backendIP}/api/leaves`, {
-      headers: {
-        Authorization: token
+        const absentEmps = employees.filter(emp => {
+          return !todaysAttendance.some(att => att.employeeEmail === emp.emailId);
+        });
+        setAbsentEmployees(absentEmps);
+        setAttendanceData(todaysAttendance);
+
+        const leaveRes = await axios.get(`${backendIP}/api/leaves`, {
+          headers: { Authorization: token }
+        });
+
+        const todayStr = new Date().toISOString().split("T")[0]; // "2025-10-22"
+
+        const filteredLeave = leaveRes.data.filter(leave => {
+          const fromStr = new Date(leave.startDate).toISOString().split("T")[0];
+          const toStr = new Date(leave.endDate).toISOString().split("T")[0];
+          console.log("todayStr",todayStr);
+          console.log("fromStr", fromStr);
+          console.log("toStr", toStr);
+
+          return todayStr >= fromStr && todayStr <= toStr;
+        });
+        console.log(filteredLeave);
+
+        const uniqueEmpIds = [...new Set(filteredLeave.map(l => l.employeeId))];
+        setTotalLeaveData(uniqueEmpIds.length);
+
+
+      } catch (err) {
+        console.log(err);
       }
-    }).then(res => {
-      const today = new Date();
-      const filteredLeave = res.data.filter(leave => {
-        const from = new Date(leave.startDate);
-        const to = new Date(leave.endDate);
-        return today >= from && today <= to;
-      });
-      const uniqueEmpIds = [...new Set(filteredLeave.map(l => l.employeeId))];
-      setTotalLeaveData(uniqueEmpIds.length);
-    }).catch(err => console.log(err));
+    };
 
+    fetchData();
   }, [token]);
 
   const cards = [
@@ -99,12 +112,13 @@ export default function MainContent() {
     { field: 'employeeName', headerName: 'Employee Name', width: 200 },
     { field: 'date', headerName: 'Date', width: 150 },
     { field: 'status', headerName: 'Status', width: 120 },
-    { field: 'inTime', headerName: 'In Time', width: 150 },
-    { field: 'outTime', headerName: 'Out Time', width: 150 },
+    { field: 'punchIn', headerName: 'In Time', width: 150 },
+    { field: 'punchOut', headerName: 'Out Time', width: 150 },
   ];
 
   const rows = attendanceData.map((att, index) => {
-    const employee = allEmployeesList.find(emp => emp.id === att.employeeId);
+    const employee = allEmployeesList.find(emp => emp.emailId === att.employeeEmail);
+    // console.log(att.punchIn)
     return {
       id: index + 1,
       employeeName: employee
@@ -177,7 +191,7 @@ export default function MainContent() {
             series={[
               {
                 data: [
-                  { id: 0, value: allEmployeesList.length, label: 'Total' },
+                  { id: 0, value: allEmployeesList.length, label: 'Total Employees' },
                   { id: 1, value: attendanceData.length, label: 'Present' },
                   { id: 2, value: totalLeaveData, label: 'Leave' },
                   { id: 3, value: absentEmployees.length, label: 'Absent' },

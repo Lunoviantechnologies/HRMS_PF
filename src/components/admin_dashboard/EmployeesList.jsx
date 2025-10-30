@@ -29,7 +29,7 @@ const EmployeesList = () => {
                 Authorization: token
             }
         }).then(res => {
-            console.log(res.data);
+            // console.log(res.data);
             setAllEmployeesList(res.data);
         }).catch(err => console.log(err));
     }, [token]);
@@ -89,6 +89,7 @@ const EmployeesList = () => {
             <Table bordered hover responsive className="shadow-sm">
                 <thead>
                     <tr>
+                        <th className="tableHeader_employeeList">Employee ID</th>
                         <th className="tableHeader_employeeList">Thumbnail</th>
                         <th className="tableHeader_employeeList">First Name</th>
                         <th className="tableHeader_employeeList">Last Name</th>
@@ -108,12 +109,14 @@ const EmployeesList = () => {
                                         emp.firstName?.toLowerCase().includes(search) ||
                                         emp.lastName?.toLowerCase().includes(search) ||
                                         emp.workEmail?.toLowerCase().includes(search) ||
-                                        emp.contactNumber1?.toLowerCase().includes(search)
+                                        emp.contactNumber1?.toLowerCase().includes(search) ||
+                                        emp.id?.toString().toLowerCase().includes(search)
                                     );
                                 })
                                 .map((employees) => {
                                     return (
                                         <tr key={employees.id}>
+                                            <td>{employees.id}</td>
                                             <td>
                                                 {employees.profilePhoto ? (
                                                     <img

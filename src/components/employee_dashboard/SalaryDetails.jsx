@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Box, Card, CardContent, Typography, Button, Grid, TextField, MenuItem, Table, TableBody, TableCell, TableHead, TableRow, Divider, } from "@mui/material";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas"; // ✅ Added
@@ -34,48 +34,48 @@ const SalaryDetails = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Fetch salary details
-  const fetchSalary = async (employeeId, month, year) => {
-    if (!employeeId || !month || !year) {
-      setError("Please provide Employee ID, Month, and Year");
-      return;
-    }
-
+  // On form submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const res = await axios.get(`${backendIP}/api/payslip/${employeeId}?month=${month}&year=${year}`, {
-        headers : {
-          Authorization : token
-        }
-      }
-      );
+      const [salaryRes, empRes] = await Promise.all([
+        axios.get(`${backendIP}/api/payslip/${formData.employeeId}?month=${formData.month}&year=${formData.year}`, {
+          headers: { Authorization: token }
+        }),
+        axios.get(`${backendIP}/api/employees/findByEmp/${user.sub}`, {
+          headers: { Authorization: token }
+        })
+      ]);
+
+      const emp = empRes.data;
+      const payDate = `10-${formData.month.toString().padStart(2, "0")}-${formData.year}`;
 
       setSalaryData({
-        ...res.data,
-        hra: res.data.hra || 10000,
-        cca: res.data.cca || 2500,
-        conveyance: res.data.conveyance || 2500,
-        allowance: res.data.allowance || 0,
+        ...salaryRes.data,
+        hra: salaryRes.data.hra || 10000,
+        cca: salaryRes.data.cca || 2500,
+        conveyance: salaryRes.data.conveyance || 2500,
+        allowance: salaryRes.data.allowance || 0,
         epfEmployee: EPF_EMPLOYEE,
         epfEmployer: EPF_EMPLOYER,
         profTax: PROFESSIONAL_TAX,
-        monthlySalary: (res.data?.basicSalary / 12).toFixed(0),
+        monthlySalary: (salaryRes.data?.basicSalary / 12).toFixed(0),
+        employeeId : emp?.id || "N/A",
+        jobTitle: emp?.designation || "N/A",
+        dateOfJoining: emp?.joiningDate || "N/A",
+        payDate : payDate
       });
+
     } catch (err) {
-      console.error("Error fetching salary details:", err);
+      console.error(err);
       setError("No salary details found for the given inputs");
       setSalaryData(null);
     } finally {
       setLoading(false);
     }
-  };
-
-  // On form submit
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    fetchSalary(formData.employeeId, formData.month, formData.year);
   };
 
   // ✅ Calculations
@@ -114,10 +114,16 @@ const SalaryDetails = () => {
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
     // ✅ Only add captured payslip UI (logo + text + tables included)
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight*1.2, undefined, "FAST");
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight * 1.2, undefined, "FAST");
 
-    pdf.save(salaryData.employeeName+ "_" + "Payslip" + "_" + month + ".pdf");
+    pdf.save(salaryData.employeeName + "_" + "Payslip" + "_" + month + ".pdf");
   };
+
+  // useEffect(() => {
+  //   if (user?.sub) {
+  //     setFormData(prev => ({ ...prev, employeeId: user.sub }));
+  //   }
+  // }, [user]);
 
   return (
     <div>
@@ -250,26 +256,26 @@ const SalaryDetails = () => {
                 <Grid item xs={12} md={6}>
                   <Card variant="outlined">
                     <CardContent>
-                      <Typography
-                        variant="subtitle2"
-                        className="fw-bold mb-2"
-                      >
+                      <Typography variant="subtitle2" className="fw-bold mb-2">
                         Pay Summary
+                      </Typography>
+                      <Typography variant="body2">
+                        Employee ID: <b>{salaryData.employeeId}</b>
                       </Typography>
                       <Typography variant="body2">
                         Employee name: <b>{salaryData.employeeName}</b>
                       </Typography>
                       <Typography variant="body2">
-                        Job title: {salaryData.jobTitle}
+                        Job title: <b>{salaryData.jobTitle}</b>
                       </Typography>
                       <Typography variant="body2">
-                        Date of joining: {salaryData.dateOfJoining}
+                        Date of joining: <b>{salaryData.dateOfJoining}</b>
                       </Typography>
                       <Typography variant="body2">
-                        Pay period: {salaryData.payPeriod}
+                        Pay period: <b>{salaryData.payPeriod}</b>
                       </Typography>
                       <Typography variant="body2">
-                        Pay date: {salaryData.payDate}
+                        Pay date: <b>{salaryData.payDate}</b>
                       </Typography>
                     </CardContent>
                   </Card>
