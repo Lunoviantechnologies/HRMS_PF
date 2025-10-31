@@ -37,6 +37,8 @@ export default function MainContent() {
           headers: { Authorization: token },
         });
 
+        console.log("attendanceRes.data", attendanceRes.data);
+
         const todaysAttendance = attendanceRes.data.filter(record => {
           const recordDate = new Date(record.date);
           const today = new Date();
@@ -60,13 +62,13 @@ export default function MainContent() {
         const filteredLeave = leaveRes.data.filter(leave => {
           const fromStr = new Date(leave.startDate).toISOString().split("T")[0];
           const toStr = new Date(leave.endDate).toISOString().split("T")[0];
-          console.log("todayStr",todayStr);
-          console.log("fromStr", fromStr);
-          console.log("toStr", toStr);
+          // console.log("todayStr",todayStr);
+          // console.log("fromStr", fromStr);
+          // console.log("toStr", toStr);
 
           return todayStr >= fromStr && todayStr <= toStr;
         });
-        console.log(filteredLeave);
+        // console.log(filteredLeave);
 
         const uniqueEmpIds = [...new Set(filteredLeave.map(l => l.employeeId))];
         setTotalLeaveData(uniqueEmpIds.length);
