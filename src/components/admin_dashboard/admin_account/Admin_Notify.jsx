@@ -73,19 +73,64 @@ export default function AdminNotifications() {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleClose}
-        PaperProps={{ style: { maxHeight: 300, width: 350 } }}
+        PaperProps={{
+          style: {
+            maxHeight: 450,
+            width: 350,
+            padding: "12px",
+            borderRadius: "12px",
+            boxShadow: "0 6px 15px rgba(0, 0, 0, 0.25)",
+            backgroundColor: "#fdfdfd",
+          },
+        }}
       >
         {notifications.length === 0 && (
-          <MenuItem disabled>No notifications</MenuItem>
+          <MenuItem disabled>
+            <Typography variant="body1" sx={{ color: "gray", textAlign: "center" }}>
+              No notifications
+            </Typography>
+          </MenuItem>
         )}
+
         {notifications.map((n, i) => (
-          <MenuItem key={i} onClick={handleClose}>
+          <MenuItem
+            key={i}
+            onClick={handleClose}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: 0.5,
+              p: 1.5,
+              mb: 1,
+              borderRadius: "10px",
+              backgroundColor: "#fff",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              "&:hover": {
+                backgroundColor: "#f5f5f5",
+              },
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: "bold", color: "#3f51b5", fontSize: "0.9rem" }}
+            >
+              {n.type || "INFO"}
+            </Typography>
             <Typography
               variant="body2"
-              sx={{ fontWeight: n.type === "LEAVE_REQUEST" ? "bold" : "normal" }}
+              sx={{
+                fontSize: "0.9rem",
+                lineHeight: 1.6,
+                color: "#333",
+                whiteSpace: "normal",
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
             >
-              <strong>{n.type || "INFO"}:</strong> {n.message}
+              {n.message}
             </Typography>
+
           </MenuItem>
         ))}
       </Menu>

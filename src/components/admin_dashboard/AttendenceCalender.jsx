@@ -1,23 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
 const AttendanceCalendar = ({ records }) => {
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
 
-    // Convert date to YYYY-MM-DD
+    // ✅ Update records when modal opens
+    useEffect(() => {
+        if (records && Array.isArray(records)) {
+            setAttendanceRecords(records);
+        }
+    }, [records]);
+
+    // ✅ Format date to YYYY-MM-DD
     const formatDate = (date) => {
         if (!(date instanceof Date) || isNaN(date)) return null;
-        return date.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local timezone
+        return date.toLocaleDateString("en-CA"); // "YYYY-MM-DD"
     };
 
-    // Decide tile class based on attendance
+    // ✅ Decide calendar tile style
     const tileClassName = ({ date, view }) => {
         if (view === "month") {
-            const formattedTileDate = formatDate(date); // calendar tile date (YYYY-MM-DD)
-            if (!formattedTileDate) return null;
-
-            const record = records.find((r) => r.date === formattedTileDate); // r.date is already string
+            const formattedDate = formatDate(date);
+            const record = attendanceRecords.find((r) => r.date === formattedDate);
 
             if (record?.status?.toLowerCase() === "present") return "present-day";
             if (record?.status?.toLowerCase() === "absent") return "absent-day";
@@ -38,7 +44,7 @@ const AttendanceCalendar = ({ records }) => {
                 Selected Date: <b>{selectedDate.toDateString()}</b>
             </p>
 
-            {/* Legend */}
+            {/* ✅ Legend */}
             <div className="legend">
                 <span className="legend-item present">Present</span>
                 <span className="legend-item absent">Absent</span>
