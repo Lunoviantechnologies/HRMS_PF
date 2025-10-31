@@ -42,7 +42,7 @@ const Employee_LeaveRequest = () => {
                 senderEmail: user.sub,
                 receiverEmail: "admin@example.com", // change to your actual admin email or leave null if backend handles
                 actionType: "LEAVE_APPLIED",
-                details: `${user.sub} applied leave from ${response.data.startDate} to ${response.data.endDate}`,
+                message: `${user.sub} applied leave from ${response.data.startDate} to ${response.data.endDate}`,
             };
 
             await axios.post(`${backendIP}/api/notifications/send`, notificationPayload, {
