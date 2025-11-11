@@ -27,7 +27,7 @@
   text-align: center;
 }
 
-/* Attendance  */
+/* Attendance Calendar */
 
 .present-day {
   background: green !important;
@@ -47,7 +47,7 @@
   border-radius: 50% !important;
 }
 
-/* Legend */
+/* Calendar Legend */
 .legend {
   margin-top: 10px;
   display: flex;
@@ -62,8 +62,14 @@
   font-size: 14px;
 }
 
-.legend-item.present { background: green; }
-.legend-item.absent { background: red; }
-.legend-item.halfday { background: orange; }
+.legend-item.present {
+  background: green;
+}
 
+.legend-item.absent {
+  background: red;
+}
 
+.legend-item.halfday {
+  background: orange;
+}

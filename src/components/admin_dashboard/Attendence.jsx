@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import { Button, Modal } from "react-bootstrap";
-import { Card, Paper } from "@mui/material";
+import { Button, Modal, Card, Table, OverlayTrigger, Tooltip, Pagination, Form, Row, Col, } from "react-bootstrap";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
@@ -11,231 +9,455 @@ import AttendanceCalendar from "./AttendenceCalender";
 const Attendance = () => {
     const { token } = useAuth();
     const [employeeAttendance, setEmployeeAttendance] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
     const [attendanceRecords, setAttendanceRecords] = useState([]);
+    const [allEmployeesList, setAllEmployeesList] = useState([]);
+    const [currentView, setCurrentView] = useState("all");
+
+    // ✅ Manual attendance form state
+    const [manualForm, setManualForm] = useState({
+        employeeEmail: "",
+        attendanceDate: "",
+        punchInTime: "",
+        punchOutTime: "",
+    });
+    const [loading, setLoading] = useState(false);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 10;
+
+    const allColumns = [
+        { key: "id", header: "ID", width: "70px", field: "id" },
+        { key: "photo", header: "Thumbnail", width: "100px", field: "photo" },
+        { key: "employeeEmail", header: "Email", width: "200px", field: "employeeEmail" },
+        { key: "breakeStatus", header: "Status", width: "150px", field: "breakeStatus" },
+        { key: "date", header: "Date", width: "150px", field: "date" },
+        { key: "punchIn", header: "Punch In", width: "150px", field: "punchIn" },
+        { key: "punchOut", header: "Punch Out", width: "150px", field: "punchOut" },
+        { key: "location", header: "Location", width: "180px", field: "location" },
+        { key: "actions", header: "Action", width: "120px", field: "actions" },
+    ];
+
+    const absentColumns = [
+        { key: "id", header: "ID", width: "70px", field: "id" },
+        { key: "emailId", header: "Email", width: "200px", field: "emailId" },
+        { key: "status", header: "Status", width: "150px", field: "status" },
+        { key: "date", header: "Date", width: "150px", field: "date" },
+        { key: "actions", header: "Action", width: "120px", field: "actions" },
+    ];
+
+    const getColumns = () => (currentView === "absent" ? absentColumns : allColumns);
 
     useEffect(() => {
-        axios
-            .get(`${backendIP}/api/attendance/all`, {
-                headers: { Authorization: token },
-            })
-            .then((res) => {
-                const formattedData = res.data.map((item, index) => ({
+        const fetchData = async () => {
+            try {
+                const empRes = await axios.get(`${backendIP}/api/employees/all`, {
+                    headers: { Authorization: token },
+                });
+                const allEmployees = empRes.data;
+                setAllEmployeesList(allEmployees);
+
+                const attRes = await axios.get(`${backendIP}/api/attendance/all`, {
+                    headers: { Authorization: token },
+                });
+
+                const formattedData = attRes.data.map((item, index) => ({
                     ...item,
-                    id: item.id || index,
-                    breakStart: item.breakStart,
-                    breakEnd: item.breakEnd,
-                    breakeStatus: item.breakeStatus,
-                    employeeEmail: item.employeeEmail,
-                    location: item.location,
-                    photo: item.photo || "-",
-                    employee_Id: item.employee_Id,
-                    firstName: item.firstName || "",
-                    lastName: item.lastName || "",
-                    punchIn: new Date(item.punchIn).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit"
-                    }),
+                    id: item.id || index + 1,
+                    date: new Date(item.date).toLocaleDateString("en-CA"),
+                    originalPunchIn: item.punchIn,
+                    originalPunchOut: item.punchOut,
+                    punchIn: item.punchIn
+                        ? new Date(item.punchIn).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                        })
+                        : "-",
                     punchOut: item.punchOut
                         ? new Date(item.punchOut).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
-                            second: "2-digit"
+                            second: "2-digit",
                         })
                         : "-",
-                    date: new Date(item.date).toLocaleDateString("en-CA") // ✅ fixed
                 }));
 
                 setEmployeeAttendance(formattedData);
-                // console.log(res.data);
-
-            })
-            .catch((err) => {
-                console.error("Error fetching attendance:", err);
-            });
+                setFilteredData(formattedData);
+                setCurrentView("all");
+            } catch (err) {
+                console.error("Error fetching data:", err);
+            }
+        };
+        fetchData();
     }, [token]);
 
-    // Handle view + fetch employee records
-    const handleView = (row) => {
-        const calculateBreakTime = (row) => {
-            const diffMs = new Date(row.breakEnd) - new Date(row.breakStart);
-            const totalSeconds = Math.floor(diffMs / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            // Pad with leading zero → 2 digits
-            const pad = (n) => String(n).padStart(2, "0");
-            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-        };
+    // Pagination
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const currentRows = filteredData.slice(startIndex, startIndex + rowsPerPage);
 
-        const calculateWorkingHours = (row) => {
-            const start = new Date(row.punchIn);
-            const end = new Date(row.punchOut);
-            if (!row.punchIn || !row.punchOut || isNaN(start) || isNaN(end)) return "00:00:00";
-            let totalMs = end - start; // total working time in ms
-
-            // Subtract break time if provided
-            if (row.breakStart && row.breakEnd) {
-                const breakStartDate = new Date(row.breakStart);
-                const breakEndDate = new Date(row.breakEnd);
-                if (!isNaN(breakStartDate) && !isNaN(breakEndDate)) {
-                    totalMs -= breakEndDate - breakStartDate;
-                }
-            }
-
-            if (totalMs < 0) totalMs = 0; // safeguard
-
-            const totalSeconds = Math.floor(totalMs / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-
-            const pad = (n) => String(n).padStart(2, "0");
-            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-        };
-
-        setSelectedRow({ ...row, totalBreakTIme: calculateBreakTime(row), workingHours: calculateWorkingHours(row) });
-        setShowModal(true);
-
-        const employeeRecord = employeeAttendance
-            .filter(rec => rec.employeeEmail === row.employeeEmail)
-            .map((rec) => ({
-                date: rec.date,   // already "YYYY-MM-DD"
-                status: rec.status || (rec.punchIn ? "present" : "absent")
-            }));
-        // console.log(employeeRecord);
-        setAttendanceRecords(employeeRecord);
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
     };
 
-    // DataGrid Columns
-    const columns = [
-        { field: "id", headerName: "ID", width: 70 },
-        {
-            field: "photo",
-            headerName: "Thumbnail",
-            width: 100,
-            renderCell: (params) =>
-                params.value && params.value !== "-" ? (
+    const renderPagination = () => (
+        <Pagination className="justify-content-center mt-3 flex-wrap">
+            <Pagination.First disabled={currentPage === 1} onClick={() => handlePageChange(1)} />
+            <Pagination.Prev disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} />
+            {[...Array(totalPages)].map((_, index) => (
+                <Pagination.Item
+                    key={index + 1}
+                    active={index + 1 === currentPage}
+                    onClick={() => handlePageChange(index + 1)}
+                >
+                    {index + 1}
+                </Pagination.Item>
+            ))}
+            <Pagination.Next
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+            />
+            <Pagination.Last
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(totalPages)}
+            />
+        </Pagination>
+    );
+
+    // Filters
+    const handleAttendanceAll = () => {
+        setCurrentView("all");
+        setFilteredData(employeeAttendance);
+        setCurrentPage(1);
+    };
+
+    const handleAttendancePresent = () => {
+        const today = new Date();
+        const present = employeeAttendance.filter((record) => {
+            const recordDate = new Date(record.originalPunchIn);
+            return record.originalPunchIn && recordDate.toDateString() === today.toDateString();
+        });
+        setCurrentView("present");
+        setFilteredData(present);
+        setCurrentPage(1);
+    };
+
+    const handleAttendanceAbsent = () => {
+        const currentDate = new Date();
+        const todayDateString = currentDate.toLocaleDateString("en-CA");
+        const todayPresentEmails = employeeAttendance
+            .filter(
+                (record) =>
+                    new Date(record.originalPunchIn).toDateString() === currentDate.toDateString()
+            )
+            .map((rec) => rec.employeeEmail);
+
+        const absent = allEmployeesList
+            .filter((emp) => !todayPresentEmails.includes(emp.emailId))
+            .map((emp, index) => ({
+                id: emp.id || index + 1,
+                emailId: emp.emailId,
+                status: "Absent",
+                date: todayDateString,
+            }));
+
+        setCurrentView("absent");
+        setFilteredData(absent);
+        setCurrentPage(1);
+    };
+
+    // Cell Renderer
+    const renderCell = (row, columnKey) => {
+        const value = row[columnKey];
+        switch (columnKey) {
+            case "photo":
+                return value ? (
                     <img
-                        src={`data:image/jpeg;base64,${params.value}`}
+                        src={`data:image/jpeg;base64,${value}`}
                         alt="Employee"
-                        style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", }}
+                        style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                        }}
                     />
                 ) : (
                     <span>No Photo</span>
-                ),
-        },
-        { field: "employeeEmail", headerName: "Email", width: 200 },
-        {
-            field: "breakeStatus",
-            headerName: "Status",
-            width: 150,
-            renderCell: (params) => (
-                <b style={{ color: params.value === "ACTIVE" ? "green" : "red" }}>
-                    {params.value}
-                </b>
-            ),
-        },
-        { field: "date", headerName: "Date", width: 150 },
-        { field: "punchIn", headerName: "Punch In", width: 150 },
-        { field: "punchOut", headerName: "Punch Out", width: 150 },
-        { field: "location", headerName: "Location", width: 150 },
-        {
-            field: "actions",
-            headerName: "Action",
-            width: 120,
-            renderCell: (params) => (
-                <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => handleView(params.row)}
-                >
-                    View
-                </Button>
-            ),
+                );
+            case "breakeStatus":
+                return <b style={{ color: value === "ACTIVE" ? "green" : "red" }}>{value}</b>;
+            case "location":
+                return (
+                    <OverlayTrigger placement="top" overlay={<Tooltip>{value}</Tooltip>}>
+                        <span
+                            style={{
+                                display: "inline-block",
+                                maxWidth: "150px",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {value}
+                        </span>
+                    </OverlayTrigger>
+                );
+            case "actions":
+                return (
+                    <Button variant="outline-primary" size="sm" onClick={() => handleView(row)}>
+                        View
+                    </Button>
+                );
+            default:
+                return value;
         }
-    ];
+    };
+
+    // ✅ Handle View
+    const handleView = (row) => {
+        setSelectedRow(row);
+        setShowModal(true);
+
+        const records = employeeAttendance
+            .filter((att) => att.employeeEmail === row.employeeEmail)
+            .map((att) => ({
+                date: att.date,
+                status: att.punchIn && att.punchOut ? "present" : "absent",
+            }));
+        setAttendanceRecords(records);
+
+        // prefill manual form if in absent view
+        if (currentView === "absent") {
+            setManualForm({
+                employeeEmail: row.emailId,
+                attendanceDate: row.date,
+                punchInTime: "",
+                punchOutTime: "",
+            });
+        } else {
+            setManualForm({ employeeEmail: "", attendanceDate: "", punchInTime: "", punchOutTime: "" });
+        }
+    };
+
+    // ✅ Submit Manual Attendance
+    const handleManualSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            // Combine date and time to full datetime format
+            const fullPunchIn = `${manualForm.attendanceDate}T${manualForm.punchInTime}:00`;
+            const fullPunchOut = `${manualForm.attendanceDate}T${manualForm.punchOutTime}:00`;
+
+            const formData = new FormData();
+            formData.append("employeeEmail", manualForm.employeeEmail);
+            formData.append("attendanceDate", manualForm.attendanceDate);
+            formData.append("punchInTime", fullPunchIn);
+            formData.append("punchOutTime", fullPunchOut);
+
+            const response = await axios.post(
+                `${backendIP}/api/attendance/manualAttendance`,
+                formData,
+                {
+                    headers: {
+                        Authorization: token,
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            console.log("Manual attendance response:", response.data);
+            alert("Attendance marked successfully!");
+            setShowModal(false);
+        } catch (err) {
+            console.error("❌ Manual attendance failed:", err.response?.data || err.message);
+            alert(err.response?.data || "Failed to mark attendance.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <div className="container mt-4">
+        <div className="container mt-2">
             <h1 className="mb-3">Employee Attendance</h1>
 
-            <Card sx={{ padding: "15px", boxShadow: 4, marginTop: 3 }}>
-                <h4 style={{ textAlign: "center" }}>Employee Attendance List</h4>
+            <div className="mb-3 d-flex gap-2">
+                <Button
+                    variant={currentView === "all" ? "primary" : "outline-primary"}
+                    onClick={handleAttendanceAll}
+                >
+                    All
+                </Button>
+                <Button
+                    variant={currentView === "present" ? "success" : "outline-success"}
+                    onClick={handleAttendancePresent}
+                >
+                    Present
+                </Button>
+                <Button
+                    variant={currentView === "absent" ? "danger" : "outline-danger"}
+                    onClick={handleAttendanceAbsent}
+                >
+                    Absent
+                </Button>
+            </div>
 
-                <Paper sx={{ height: 400, width: "100%", marginTop: "20px" }}>
-                    <DataGrid
-                        rows={employeeAttendance}
-                        columns={columns}
-                        pageSizeOptions={[5, 10]}
-                        checkboxSelection
-                        getRowId={(row) => row.id}
-                        sx={{
-                            border: "1px solid #ccc",
+            <Card className="shadow mt-3 p-3">
+                <Card.Title className="text-center">Employee Attendance List</Card.Title>
 
-                            // ✅ header row 
-                            "& .MuiDataGrid-columnHeaders": {
-                                backgroundColor: "#0385ac",
-                                color: "#fff",
-                            },
+                {/* ✅ Scrollable Table */}
+                <div
+                    style={{
+                        maxHeight: "500px",
+                        overflowY: "auto",
+                        overflowX: "auto",
+                        marginTop: "20px",
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    <Table
+                        bordered
+                        hover
+                        striped
+                        className="mb-0 text-center align-middle"
+                        style={{ minWidth: "1200px" }}
+                    >
+                        <thead className="table-primary sticky-top">
+                            <tr>
+                                {getColumns().map((column) => (
+                                    <th
+                                        key={column.key}
+                                        style={{
+                                            width: column.width,
+                                            backgroundColor: "#0385acff",
+                                            color: "white",
+                                            textAlign: "center",
+                                            verticalAlign: "middle",
+                                            position: "sticky",
+                                            top: 0,
+                                            zIndex: 10,
+                                        }}
+                                    >
+                                        {column.header}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentRows.length > 0 ? (
+                                currentRows.map((row) => (
+                                    <tr key={row.id}>
+                                        {getColumns().map((col) => (
+                                            <td key={col.key}>{renderCell(row, col.field)}</td>
+                                        ))}
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={getColumns().length} className="text-center">
+                                        No data available.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
 
-                            // ✅ header cell text
-                            "& .MuiDataGrid-columnHeaderTitle": {
-                                fontWeight: "bold",
-                                color: "#fff",
-                            },
-
-                            // ✅ checkbox/header icons
-                            "& .MuiDataGrid-columnHeader": {
-                                backgroundColor: "#0385ac",
-                                color: "#fff",
-                            },
-
-                            // ✅ rows & columns border
-                            "& .MuiDataGrid-cell": {
-                                borderRight: "1px solid #ccc",
-                            },
-                            "& .MuiDataGrid-row": {
-                                borderBottom: "1px solid #ccc",
-                            },
-                        }}
-                    />
-                </Paper>
+                {renderPagination()}
             </Card>
 
-            {/* Modal */}
-            <Modal
-                show={showModal}
-                onHide={() => setShowModal(false)}
-                centered
-                size="lg"
-            >
+            {/* ✅ Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Attendance Record</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {selectedRow && (
-                        <div>
-                            <p>
-
-                            </p>
-                            <ul type="none">
+                        <>
+                            <ul className="list-unstyled">
                                 <li>
-                                    <strong>Email :</strong> {selectedRow.employeeEmail}
-                                </li>
-                                <li>
-                                    <strong>Break Time :</strong> {selectedRow.totalBreakTIme}
-                                </li>
-                                <li>
-                                    <strong>Working Hours :</strong> {selectedRow.workingHours}
+                                    <strong>Email:</strong>{" "}
+                                    {selectedRow.employeeEmail || selectedRow.emailId}
                                 </li>
                             </ul>
-
-                            {/* Real Calendar */}
                             <AttendanceCalendar records={attendanceRecords} />
-                        </div>
+
+                            {/* ✅ Manual Attendance Form (only for absent) */}
+                            {currentView === "absent" && (
+                                <Form onSubmit={handleManualSubmit} className="mt-4 border-top pt-3">
+                                    <h5>Mark Manual Attendance</h5>
+                                    <Row className="g-3 mt-2">
+                                        <Col md={6}>
+                                            <Form.Group>
+                                                <Form.Label>Employee Email</Form.Label>
+                                                <Form.Control
+                                                    type="email"
+                                                    name="employeeEmail"
+                                                    value={manualForm.employeeEmail}
+                                                    readOnly
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group>
+                                                <Form.Label>Date</Form.Label>
+                                                <Form.Control
+                                                    type="date"
+                                                    name="date"
+                                                    value={manualForm.attendanceDate}
+                                                    onChange={(e) =>
+                                                        setManualForm({ ...manualForm, attendanceDate: e.target.value })
+                                                    }
+                                                    required
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group>
+                                                <Form.Label>Punch In</Form.Label>
+                                                <Form.Control
+                                                    type="time"
+                                                    name="punchIn"
+                                                    value={manualForm.punchInTime}
+                                                    onChange={(e) =>
+                                                        setManualForm({ ...manualForm, punchInTime: e.target.value })
+                                                    }
+                                                    required
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group>
+                                                <Form.Label>Punch Out</Form.Label>
+                                                <Form.Control
+                                                    type="time"
+                                                    name="punchOut"
+                                                    value={manualForm.punchOutTime}
+                                                    onChange={(e) =>
+                                                        setManualForm({ ...manualForm, punchOutTime: e.target.value })
+                                                    }
+                                                    required
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
+
+                                    <div className="text-end mt-3">
+                                        <Button type="submit" variant="success" disabled={loading}>
+                                            {loading ? "Submitting..." : "Submit Attendance"}
+                                        </Button>
+                                    </div>
+                                </Form>
+                            )}
+                        </>
                     )}
                 </Modal.Body>
                 <Modal.Footer>

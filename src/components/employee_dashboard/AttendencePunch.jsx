@@ -18,70 +18,68 @@ const AttendancePunch = () => {
   const [punchOutTime, setPunchOutTime] = useState(null);
   const [workingHours, setWorkingHours] = useState("00:00:00");
 
-  // ✅ Break state
-  const [breakStartTime, setBreakStartTime] = useState(null);
-  const [breakEndTime, setBreakEndTime] = useState(null);
+  const [breaks, setBreaks] = useState([]);
   const [isOnBreak, setIsOnBreak] = useState(false);
+  const [currentBreakStart, setCurrentBreakStart] = useState(null);
 
   const punchKey = `punch_${user?.sub}`;
 
-  // ✅ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ Restore state from localStorage
   useEffect(() => {
     if (!user?.sub) return;
     const storedData = localStorage.getItem(punchKey);
     if (storedData) {
-      const { image, inTime, outTime, breakStart, breakEnd, onBreak } =
-        JSON.parse(storedData);
+      const {
+        image,
+        inTime,
+        outTime,
+        breaks: storedBreaks = [],
+        onBreak,
+        currentBreakStart,
+      } = JSON.parse(storedData);
 
       if (inTime) setPunchInTime(new Date(inTime));
       if (outTime) setPunchOutTime(new Date(outTime));
-      if (breakStart) setBreakStartTime(new Date(breakStart));
-      if (breakEnd) setBreakEndTime(new Date(breakEnd));
+      if (storedBreaks.length) {
+        setBreaks(
+          storedBreaks.map((b) => ({
+            start: new Date(b.start),
+            end: b.end ? new Date(b.end) : null,
+          }))
+        );
+      }
+      if (onBreak && currentBreakStart)
+        setCurrentBreakStart(new Date(currentBreakStart));
+
+      setIsOnBreak(onBreak || false);
       if (image) setCapturedImage(image);
-      if (onBreak) setIsOnBreak(true);
     }
   }, [user, punchKey]);
 
-  // ✅ Calculate Working Hours (pauses on break)
+  // ✅ Keep counting total hours (including breaks)
   useEffect(() => {
     if (!punchInTime) return;
-    let interval;
+    const interval = setInterval(() => {
+      const now = punchOutTime ? new Date(punchOutTime) : new Date();
+      const totalMs = now - new Date(punchInTime);
 
-    if (!isOnBreak) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const endTime = punchOutTime ? new Date(punchOutTime) : now;
+      const hours = Math.floor(totalMs / (1000 * 60 * 60));
+      const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((totalMs % (1000 * 60)) / 1000);
 
-        let diffMs = endTime - new Date(punchInTime);
-
-        // subtract break duration
-        if (breakStartTime && !breakEndTime) {
-          diffMs -= now - breakStartTime; // ongoing break
-        } else if (breakStartTime && breakEndTime) {
-          diffMs -= breakEndTime - breakStartTime;
-        }
-
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-        setWorkingHours(
-          `${hours.toString().padStart(2, "0")}:${minutes
-            .toString()
-            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-        );
-      }, 1000);
-    }
-
+      setWorkingHours(
+        `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+      );
+    }, 1000);
     return () => clearInterval(interval);
-  }, [punchInTime, punchOutTime, isOnBreak, breakStartTime, breakEndTime]);
+  }, [punchInTime, punchOutTime]);
 
-  // ✅ Fetch Location
   const fetchLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -92,53 +90,66 @@ const AttendancePunch = () => {
           );
           const data = await response.json();
           setLocation(data.display_name || "Location not found");
-        } catch (err) {
+        } catch {
           setLocation("Unable to fetch location");
         }
       });
     }
   };
+
   useEffect(() => {
     fetchLocation();
   }, []);
 
-  // ✅ Capture Image
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
-  // ✅ Convert base64 → File
   const dataURLtoFile = (dataUrl, filename) => {
-    let arr = dataUrl.split(","),
-      mime = arr[0].match(/:(.*?);/)[1];
-    let bstr = atob(arr[1]);
+    const arr = dataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
     let n = bstr.length;
-    let u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
     return new File([u8arr], filename, { type: mime });
   };
 
-  // ✅ Single Punch (backend decides In/Out)
+  const lastPunchOut = localStorage.getItem("lastPunchOutDate");
+  const today = new Date().toDateString();
+
+  if (lastPunchOut === today && !punchInTime) {
+    return (
+      <div
+        className="bg-white rounded shadow-lg"
+        style={{ textAlign: "center", padding: "20px" }}
+      >
+        <h2>📌 Attendance Punch</h2>
+        <h3>
+          {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
+        </h3>
+        <p>✅ You already completed your  shift today.</p>
+        <p>Come back tomorrow to Punch-In again.</p>
+      </div>
+    );
+  }
+
   const handlePunch = async () => {
     if (!capturedImage) {
       setMessage("⚠ Please capture your face first.");
       return;
     }
+
     try {
       const file = dataURLtoFile(capturedImage, "captured.jpg");
-
       const formData = new FormData();
       formData.append("photo", file);
       formData.append("email", user.sub);
       formData.append("location", location);
 
       const res = await axios.post(`${backendIP}/api/attendance/marks`, formData, {
-        headers : {
-          Authorization : token
-        }
+        headers: { Authorization: token },
       });
 
       const responseMsg = res.data;
@@ -148,23 +159,22 @@ const AttendancePunch = () => {
         setPunchInTime(inTime);
         localStorage.setItem(
           punchKey,
-          JSON.stringify({ image: capturedImage, inTime })
+          JSON.stringify({ image: capturedImage, inTime, breaks: [] })
         );
       } else if (responseMsg.includes("Punch-Out")) {
         const outTime = new Date();
         setPunchOutTime(outTime);
+        localStorage.setItem("lastPunchOutDate", today);
 
-        // Reset after 3 seconds
         setTimeout(() => {
           setPunchInTime(null);
           setPunchOutTime(null);
           setCapturedImage(null);
           setWorkingHours("00:00:00");
-          setBreakStartTime(null);
-          setBreakEndTime(null);
+          setBreaks([]);
           setIsOnBreak(false);
           localStorage.removeItem(punchKey);
-        }, 9000);
+        }, 5000);
       }
 
       setMessage(responseMsg);
@@ -173,17 +183,20 @@ const AttendancePunch = () => {
     }
   };
 
-  // ✅ Break Start
+  // ✅ Break Start (frontend tolerant)
   const handleBreakStart = async () => {
+    const now = new Date();
     try {
       const res = await axios.post(
         `${backendIP}/api/attendance/break/start?email=${user.sub}`,
         null,
         { headers: { Authorization: token } }
       );
-      const now = new Date();
-      setBreakStartTime(now);
+
+      setCurrentBreakStart(now);
       setIsOnBreak(true);
+      const updatedBreaks = [...breaks, { start: now, end: null }];
+      setBreaks(updatedBreaks);
 
       localStorage.setItem(
         punchKey,
@@ -191,27 +204,56 @@ const AttendancePunch = () => {
           image: capturedImage,
           inTime: punchInTime,
           outTime: punchOutTime,
-          breakStart: now,
+          breaks: updatedBreaks,
           onBreak: true,
+          currentBreakStart: now,
         })
       );
+
       setMessage(res.data || "✅ Break Started");
     } catch (err) {
-      setMessage("❌ Break Start Failed: " + (err.response?.data || err.message));
+      const msg = err.response?.data || err.message;
+
+      // ✅ Ignore "already break taken" backend error and start locally anyway
+      if (msg.includes("already") || msg.includes("taken")) {
+        const updatedBreaks = [...breaks, { start: now, end: null }];
+        setBreaks(updatedBreaks);
+        setIsOnBreak(true);
+        setCurrentBreakStart(now);
+        localStorage.setItem(
+          punchKey,
+          JSON.stringify({
+            image: capturedImage,
+            inTime: punchInTime,
+            outTime: punchOutTime,
+            breaks: updatedBreaks,
+            onBreak: true,
+            currentBreakStart: now,
+          })
+        );
+        setMessage("✅ Break Started (local override)");
+      } else {
+        setMessage("❌ Break Start Failed: " + msg);
+      }
     }
   };
 
-  // ✅ Break End
+  // ✅ End Break
   const handleBreakEnd = async () => {
+    const now = new Date();
     try {
       const res = await axios.post(
         `${backendIP}/api/attendance/break/end?email=${user.sub}`,
         null,
         { headers: { Authorization: token } }
       );
-      const now = new Date();
-      setBreakEndTime(now);
+
       setIsOnBreak(false);
+      const updatedBreaks = breaks.map((b) =>
+        b.end === null ? { ...b, end: now } : b
+      );
+      setBreaks(updatedBreaks);
+      setCurrentBreakStart(null);
 
       localStorage.setItem(
         punchKey,
@@ -219,14 +261,36 @@ const AttendancePunch = () => {
           image: capturedImage,
           inTime: punchInTime,
           outTime: punchOutTime,
-          breakStart: breakStartTime,
-          breakEnd: now,
+          breaks: updatedBreaks,
           onBreak: false,
         })
       );
       setMessage(res.data || "✅ Break Ended");
     } catch (err) {
-      setMessage("❌ Break End Failed: " + (err.response?.data || err.message));
+      const msg = err.response?.data || err.message;
+
+      // ✅ Ignore backend restriction and end break locally
+      if (msg.includes("already") || msg.includes("not started")) {
+        const updatedBreaks = breaks.map((b) =>
+          b.end === null ? { ...b, end: now } : b
+        );
+        setBreaks(updatedBreaks);
+        setIsOnBreak(false);
+        setCurrentBreakStart(null);
+        localStorage.setItem(
+          punchKey,
+          JSON.stringify({
+            image: capturedImage,
+            inTime: punchInTime,
+            outTime: punchOutTime,
+            breaks: updatedBreaks,
+            onBreak: false,
+          })
+        );
+        setMessage("✅ Break Ended (local override)");
+      } else {
+        setMessage("❌ Break End Failed: " + msg);
+      }
     }
   };
 
@@ -281,7 +345,7 @@ const AttendancePunch = () => {
         {punchInTime && !punchOutTime && (
           <>
             <p>🕒 In Time: {punchInTime.toLocaleTimeString()}</p>
-            <p>⏱ Live Hours: {workingHours}</p>
+            <p>⏱ Working Hours (including breaks): {workingHours}</p>
 
             {!isOnBreak ? (
               <button
@@ -308,6 +372,27 @@ const AttendancePunch = () => {
             >
               🔴 Punch Out
             </button>
+
+            {breaks.length > 0 && (
+              <div
+                style={{
+                  marginTop: "15px",
+                  textAlign: "left",
+                  maxHeight: "150px",
+                  overflowY: "auto",
+                }}
+              >
+                <h6>☕ Breaks Taken:</h6>
+                <ul style={{ fontSize: "14px" }}>
+                  {breaks.map((b, i) => (
+                    <li key={i}>
+                      {b.start.toLocaleTimeString()} ➜{" "}
+                      {b.end ? b.end.toLocaleTimeString() : "Ongoing..."}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
 
@@ -315,13 +400,22 @@ const AttendancePunch = () => {
           <>
             <p>🕒 In: {punchInTime?.toLocaleTimeString()}</p>
             <p>🕒 Out: {punchOutTime?.toLocaleTimeString()}</p>
-            <p>⏱ Total Hours: {workingHours}</p>
-            {breakStartTime && (
-              <p>☕ Break Started: {breakStartTime.toLocaleTimeString()}</p>
+            <p>⏱ Total Worked (incl. breaks): {workingHours}</p>
+
+            {breaks.length > 0 && (
+              <>
+                <h6>☕ Break Summary:</h6>
+                <ul style={{ fontSize: "14px" }}>
+                  {breaks.map((b, i) => (
+                    <li key={i}>
+                      {b.start.toLocaleTimeString()} ➜{" "}
+                      {b.end ? b.end.toLocaleTimeString() : "Ongoing..."}
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
-            {breakEndTime && (
-              <p>✅ Break Ended: {breakEndTime.toLocaleTimeString()}</p>
-            )}
+
             {capturedImage && (
               <img
                 src={capturedImage}
